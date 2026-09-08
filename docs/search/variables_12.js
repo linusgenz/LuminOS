@@ -31,7 +31,7 @@ var searchData=
   ['reserved_5fram_28',['reserved_ram',['../structmeminfo.html#adb57cb508483ff38c0fef17d826f4657',1,'meminfo']]],
   ['restored_29',['restored',['../unionvbus__payload__t.html#a4942ff1e8bd0824001e6bf8e2d92d345',1,'vbus_payload_t']]],
   ['revents_30',['revents',['../structpollfd.html#aafb457d11cac415faf0e1e2b825118c2',1,'pollfd::revents'],['../structpollhdl.html#a7e1e11d9654dfc6110a492c45fa63be7',1,'pollhdl::revents']]],
-  ['revision_31',['revision',['../structlucifer__query__config.html#a3cd87ff7e4962f1be723bf8d9c31b84b',1,'lucifer_query_config']]],
+  ['revision_31',['revision',['../structlucifer__query__config.html#a3cd87ff7e4962f1be723bf8d9c31b84b',1,'lucifer_query_config::revision'],['../structlucifer__query__pci__info.html#a70b1670597c2a4638aa7b2154194d467',1,'lucifer_query_pci_info::revision']]],
   ['rip_32',['rip',['../structjmp__buf.html#a54255cc587381da7a4bf746e8ebb2e1b',1,'jmp_buf']]],
   ['rm_5feo_33',['rm_eo',['../structregmatch__t.html#a728c28b9b23fa28c4e0b90e3a1a29efc',1,'regmatch_t']]],
   ['rm_5fso_34',['rm_so',['../structregmatch__t.html#a90ac8973d256eaffdbb20de676ff45a4',1,'regmatch_t']]],

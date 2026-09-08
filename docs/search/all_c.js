@@ -2,7 +2,7 @@ var searchData=
 [
   ['l3_5fbanks_0',['l3_banks',['../structlucifer__query__topology.html#acb6e6473e228d10913cd821effbd649a',1,'lucifer_query_topology']]],
   ['l_5ftmpnam_1',['L_tmpnam',['../stdlib_8h.html#ad2560a07a7528c4975660f391320faca',1,'stdlib.h']]],
-  ['label_2',['label',['../classstella_1_1Label.html',1,'stella::Label'],['../structchronos__user__checkpoint.html#aa00dd9c5d39f333a0efc196ec7e18459',1,'chronos_user_checkpoint::label'],['../structchronos__event.html#afd17f4b358972d4512f22145e2ab9814',1,'chronos_event::label'],['../classstella_1_1Label.html#a4ad3a32791e1a0d1b15eac33079ab2ac',1,'stella::Label::Label()']]],
+  ['label_2',['label',['../classstella_1_1Label.html',1,'stella::Label'],['../classstella_1_1Label.html#a4ad3a32791e1a0d1b15eac33079ab2ac',1,'stella::Label::Label()'],['../structchronos__user__checkpoint.html#aa00dd9c5d39f333a0efc196ec7e18459',1,'chronos_user_checkpoint::label'],['../structchronos__event.html#afd17f4b358972d4512f22145e2ab9814',1,'chronos_event::label']]],
   ['labs_3',['labs',['../stdlib_8h.html#a3102965969578ae09e43dfc53996e90e',1,'stdlib.h']]],
   ['large_5fseg_4',['large_seg',['../structlarge__seg.html',1,'large_seg'],['../memory_8h.html#a8f2bb8405419add9d451303cea43d127',1,'large_seg:&#160;memory.h']]],
   ['last_5ffull_5fcapacity_5',['last_full_capacity',['../structbattery__info.html#a3b049fbc1a102f12bbd9f7bb8dbfa18c',1,'battery_info']]],
@@ -143,10 +143,18 @@ var searchData=
   ['lua_5fget_5ftable_5fstring_140',['lua_get_table_string',['../luautil_8h.html#af8201cb04fc4ea3b4441478c3b46ceaa',1,'luautil.h']]],
   ['luautil_2eh_141',['luautil.h',['../luautil_8h.html',1,'']]],
   ['lucifer_5fdrm_2eh_142',['lucifer_drm.h',['../lucifer__drm_8h.html',1,'']]],
-  ['lucifer_5fioctl_5fquery_143',['LUCIFER_IOCTL_QUERY',['../lucifer__drm_8h.html#a735cf9ac6402825a4ca8ad06d7250702',1,'lucifer_drm.h']]],
-  ['lucifer_5fquery_144',['lucifer_query',['../structlucifer__query.html',1,'']]],
-  ['lucifer_5fquery_5fconfig_145',['lucifer_query_config',['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a33a12cbcb37b7df8b595217eeb37ecd0',1,'LUCIFER_QUERY_CONFIG:&#160;lucifer_drm.h'],['../structlucifer__query__config.html',1,'lucifer_query_config']]],
-  ['lucifer_5fquery_5fid_146',['lucifer_query_id',['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17',1,'lucifer_drm.h']]],
-  ['lucifer_5fquery_5fmem_5fregions_147',['lucifer_query_mem_regions',['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a94997f5cf27060db4d3059eab8359c85',1,'LUCIFER_QUERY_MEM_REGIONS:&#160;lucifer_drm.h'],['../structlucifer__query__mem__regions.html',1,'lucifer_query_mem_regions']]],
-  ['lucifer_5fquery_5ftopology_148',['lucifer_query_topology',['../structlucifer__query__topology.html',1,'lucifer_query_topology'],['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17af36134778a410cb33bbbc83c1637142a',1,'LUCIFER_QUERY_TOPOLOGY:&#160;lucifer_drm.h']]]
+  ['lucifer_5fengine_5fclass_143',['lucifer_engine_class',['../lucifer__drm_8h.html#a1a79d4f0ca6fde89087ee27e653b5571',1,'lucifer_drm.h']]],
+  ['lucifer_5fengine_5fclass_5fcopy_144',['LUCIFER_ENGINE_CLASS_COPY',['../lucifer__drm_8h.html#a1a79d4f0ca6fde89087ee27e653b5571adbf519c4cf305fef7d7e5db5d08fee3b',1,'lucifer_drm.h']]],
+  ['lucifer_5fengine_5fclass_5finstance_145',['lucifer_engine_class_instance',['../structlucifer__engine__class__instance.html',1,'']]],
+  ['lucifer_5fengine_5fclass_5frender_146',['LUCIFER_ENGINE_CLASS_RENDER',['../lucifer__drm_8h.html#a1a79d4f0ca6fde89087ee27e653b5571ae7f5e47341dde488d14a56058f86c521',1,'lucifer_drm.h']]],
+  ['lucifer_5fioctl_5fquery_147',['LUCIFER_IOCTL_QUERY',['../lucifer__drm_8h.html#a735cf9ac6402825a4ca8ad06d7250702',1,'lucifer_drm.h']]],
+  ['lucifer_5fioctl_5fversion_148',['LUCIFER_IOCTL_VERSION',['../lucifer__drm_8h.html#a2e436cc971b02e8c70bea47c3f795888',1,'lucifer_drm.h']]],
+  ['lucifer_5fquery_149',['lucifer_query',['../structlucifer__query.html',1,'']]],
+  ['lucifer_5fquery_5fconfig_150',['lucifer_query_config',['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a33a12cbcb37b7df8b595217eeb37ecd0',1,'LUCIFER_QUERY_CONFIG:&#160;lucifer_drm.h'],['../structlucifer__query__config.html',1,'lucifer_query_config']]],
+  ['lucifer_5fquery_5fengines_151',['lucifer_query_engines',['../structlucifer__query__engines.html',1,'lucifer_query_engines'],['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17ac0ef5f8da1446813024b5101fea6dd4e',1,'LUCIFER_QUERY_ENGINES:&#160;lucifer_drm.h']]],
+  ['lucifer_5fquery_5fid_152',['lucifer_query_id',['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17',1,'lucifer_drm.h']]],
+  ['lucifer_5fquery_5fmem_5fregions_153',['lucifer_query_mem_regions',['../structlucifer__query__mem__regions.html',1,'lucifer_query_mem_regions'],['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a94997f5cf27060db4d3059eab8359c85',1,'LUCIFER_QUERY_MEM_REGIONS:&#160;lucifer_drm.h']]],
+  ['lucifer_5fquery_5fpci_5finfo_154',['lucifer_query_pci_info',['../structlucifer__query__pci__info.html',1,'lucifer_query_pci_info'],['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a469ab8e27f33f2ffc5916833ca1b8d02',1,'LUCIFER_QUERY_PCI_INFO:&#160;lucifer_drm.h']]],
+  ['lucifer_5fquery_5ftopology_155',['lucifer_query_topology',['../structlucifer__query__topology.html',1,'lucifer_query_topology'],['../lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17af36134778a410cb33bbbc83c1637142a',1,'LUCIFER_QUERY_TOPOLOGY:&#160;lucifer_drm.h']]],
+  ['lucifer_5fversion_156',['lucifer_version',['../structlucifer__version.html',1,'']]]
 ];

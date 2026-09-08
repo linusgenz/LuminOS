@@ -104,6 +104,8 @@ $(document).ready(function(){initNavTree('lucifer__drm_8h.html',''); initResizab
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structlucifer__version.html">lucifer_version</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structlucifer__query.html">lucifer_query</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structlucifer__query__config.html">lucifer_query_config</a></td></tr>
@@ -112,19 +114,36 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structlucifer__query__mem__regions.html">lucifer_query_mem_regions</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structlucifer__engine__class__instance.html">lucifer_engine_class_instance</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structlucifer__query__engines.html">lucifer_query_engines</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structlucifer__query__pci__info.html">lucifer_query_pci_info</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a735cf9ac6402825a4ca8ad06d7250702" id="r_a735cf9ac6402825a4ca8ad06d7250702"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="lucifer__drm_8h.html#a735cf9ac6402825a4ca8ad06d7250702">LUCIFER_IOCTL_QUERY</a>&#160;&#160;&#160;<a class="el" href="include_2uapi_2vespera_2ioctl_8h.html#aff3864fa34e2475dde335a390493f24f">IOWR</a>('L', 0x01, struct <a class="el" href="structlucifer__query.html">lucifer_query</a>)</td></tr>
 <tr class="separator:a735cf9ac6402825a4ca8ad06d7250702"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e436cc971b02e8c70bea47c3f795888" id="r_a2e436cc971b02e8c70bea47c3f795888"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="lucifer__drm_8h.html#a2e436cc971b02e8c70bea47c3f795888">LUCIFER_IOCTL_VERSION</a>&#160;&#160;&#160;<a class="el" href="include_2uapi_2vespera_2ioctl_8h.html#aff3864fa34e2475dde335a390493f24f">IOWR</a>('L', 0x02, struct <a class="el" href="structlucifer__version.html">lucifer_version</a>)</td></tr>
+<tr class="separator:a2e436cc971b02e8c70bea47c3f795888"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a52eb02f85faa136a734a99f45ed4ee17" id="r_a52eb02f85faa136a734a99f45ed4ee17"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17">lucifer_query_id</a> { <a class="el" href="lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a33a12cbcb37b7df8b595217eeb37ecd0">LUCIFER_QUERY_CONFIG</a> = 0
+<tr class="memitem:a52eb02f85faa136a734a99f45ed4ee17" id="r_a52eb02f85faa136a734a99f45ed4ee17"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17">lucifer_query_id</a> { <br />
+&#160;&#160;<a class="el" href="lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a33a12cbcb37b7df8b595217eeb37ecd0">LUCIFER_QUERY_CONFIG</a> = 0
 , <a class="el" href="lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17af36134778a410cb33bbbc83c1637142a">LUCIFER_QUERY_TOPOLOGY</a> = 1
 , <a class="el" href="lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a94997f5cf27060db4d3059eab8359c85">LUCIFER_QUERY_MEM_REGIONS</a> = 2
+, <a class="el" href="lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17a469ab8e27f33f2ffc5916833ca1b8d02">LUCIFER_QUERY_PCI_INFO</a> = 3
+, <br />
+&#160;&#160;<a class="el" href="lucifer__drm_8h.html#a52eb02f85faa136a734a99f45ed4ee17ac0ef5f8da1446813024b5101fea6dd4e">LUCIFER_QUERY_ENGINES</a> = 4
+<br />
  }</td></tr>
 <tr class="separator:a52eb02f85faa136a734a99f45ed4ee17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a79d4f0ca6fde89087ee27e653b5571" id="r_a1a79d4f0ca6fde89087ee27e653b5571"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="lucifer__drm_8h.html#a1a79d4f0ca6fde89087ee27e653b5571">lucifer_engine_class</a> { <a class="el" href="lucifer__drm_8h.html#a1a79d4f0ca6fde89087ee27e653b5571ae7f5e47341dde488d14a56058f86c521">LUCIFER_ENGINE_CLASS_RENDER</a> = 0
+, <a class="el" href="lucifer__drm_8h.html#a1a79d4f0ca6fde89087ee27e653b5571adbf519c4cf305fef7d7e5db5d08fee3b">LUCIFER_ENGINE_CLASS_COPY</a> = 1
+ }</td></tr>
+<tr class="separator:a1a79d4f0ca6fde89087ee27e653b5571"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a735cf9ac6402825a4ca8ad06d7250702" name="a735cf9ac6402825a4ca8ad06d7250702"></a>
@@ -141,7 +160,41 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
+<a id="a2e436cc971b02e8c70bea47c3f795888" name="a2e436cc971b02e8c70bea47c3f795888"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2e436cc971b02e8c70bea47c3f795888">&#9670;&#160;</a></span>LUCIFER_IOCTL_VERSION</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define LUCIFER_IOCTL_VERSION&#160;&#160;&#160;<a class="el" href="include_2uapi_2vespera_2ioctl_8h.html#aff3864fa34e2475dde335a390493f24f">IOWR</a>('L', 0x02, struct <a class="el" href="structlucifer__version.html">lucifer_version</a>)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="a1a79d4f0ca6fde89087ee27e653b5571" name="a1a79d4f0ca6fde89087ee27e653b5571"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a79d4f0ca6fde89087ee27e653b5571">&#9670;&#160;</a></span>lucifer_engine_class</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="lucifer__drm_8h.html#a1a79d4f0ca6fde89087ee27e653b5571">lucifer_engine_class</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Engine class identifiers for LUCIFER_QUERY_ENGINES.</p>
+<p>Numeric values are a local UAPI contract (not required to match Xe's DRM_XE_ENGINE_CLASS_* or i915's I915_ENGINE_CLASS_*) &ndash; the Mesa-side lucifer adapter (common/lucifer/intel_engine.c) is responsible for translating these into Mesa's generic enum intel_engine_class. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a1a79d4f0ca6fde89087ee27e653b5571ae7f5e47341dde488d14a56058f86c521" name="a1a79d4f0ca6fde89087ee27e653b5571ae7f5e47341dde488d14a56058f86c521"></a>LUCIFER_ENGINE_CLASS_RENDER&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a1a79d4f0ca6fde89087ee27e653b5571adbf519c4cf305fef7d7e5db5d08fee3b" name="a1a79d4f0ca6fde89087ee27e653b5571adbf519c4cf305fef7d7e5db5d08fee3b"></a>LUCIFER_ENGINE_CLASS_COPY&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
 <a id="a52eb02f85faa136a734a99f45ed4ee17" name="a52eb02f85faa136a734a99f45ed4ee17"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a52eb02f85faa136a734a99f45ed4ee17">&#9670;&#160;</a></span>lucifer_query_id</h2>
 
@@ -157,6 +210,8 @@ Enumerations</h2></td></tr>
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a52eb02f85faa136a734a99f45ed4ee17a33a12cbcb37b7df8b595217eeb37ecd0" name="a52eb02f85faa136a734a99f45ed4ee17a33a12cbcb37b7df8b595217eeb37ecd0"></a>LUCIFER_QUERY_CONFIG&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a52eb02f85faa136a734a99f45ed4ee17af36134778a410cb33bbbc83c1637142a" name="a52eb02f85faa136a734a99f45ed4ee17af36134778a410cb33bbbc83c1637142a"></a>LUCIFER_QUERY_TOPOLOGY&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a52eb02f85faa136a734a99f45ed4ee17a94997f5cf27060db4d3059eab8359c85" name="a52eb02f85faa136a734a99f45ed4ee17a94997f5cf27060db4d3059eab8359c85"></a>LUCIFER_QUERY_MEM_REGIONS&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a52eb02f85faa136a734a99f45ed4ee17a469ab8e27f33f2ffc5916833ca1b8d02" name="a52eb02f85faa136a734a99f45ed4ee17a469ab8e27f33f2ffc5916833ca1b8d02"></a>LUCIFER_QUERY_PCI_INFO&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a52eb02f85faa136a734a99f45ed4ee17ac0ef5f8da1446813024b5101fea6dd4e" name="a52eb02f85faa136a734a99f45ed4ee17ac0ef5f8da1446813024b5101fea6dd4e"></a>LUCIFER_QUERY_ENGINES&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
 </div>

@@ -134,7 +134,7 @@ var searchData=
   ['reserved_5fram_131',['reserved_ram',['../structmeminfo.html#adb57cb508483ff38c0fef17d826f4657',1,'meminfo']]],
   ['restored_132',['restored',['../unionvbus__payload__t.html#a4942ff1e8bd0824001e6bf8e2d92d345',1,'vbus_payload_t']]],
   ['revents_133',['revents',['../structpollfd.html#aafb457d11cac415faf0e1e2b825118c2',1,'pollfd::revents'],['../structpollhdl.html#a7e1e11d9654dfc6110a492c45fa63be7',1,'pollhdl::revents']]],
-  ['revision_134',['revision',['../structlucifer__query__config.html#a3cd87ff7e4962f1be723bf8d9c31b84b',1,'lucifer_query_config']]],
+  ['revision_134',['revision',['../structlucifer__query__config.html#a3cd87ff7e4962f1be723bf8d9c31b84b',1,'lucifer_query_config::revision'],['../structlucifer__query__pci__info.html#a70b1670597c2a4638aa7b2154194d467',1,'lucifer_query_pci_info::revision']]],
   ['rewind_135',['rewind',['../stdio_8h.html#aa0cd401f198d33d9d01a9e8aa4026819',1,'stdio.h']]],
   ['rewinddir_136',['rewinddir',['../userspace_2lib_2include_2dirent_8h.html#ad4fcb58b9194b1a3c1699654de963719',1,'dirent.h']]],
   ['right_137',['Right',['../namespacestella.html#ab15a6e2406c9b23286c6d7b2b8233ea6a92b09c7c48c520c3c55e497875da437c',1,'stella']]],

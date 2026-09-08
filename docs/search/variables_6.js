@@ -15,5 +15,6 @@ var searchData=
   ['freeram_12',['freeram',['../structsysinfo.html#addf8d60d4bfc987f88b0702a61344e89',1,'sysinfo']]],
   ['freeswap_13',['freeswap',['../structsysinfo.html#ac4ee8c9075fb57dec05f2b73685122bb',1,'sysinfo']]],
   ['full_14',['Full',['../namespacestella.html#a17260e2a826c89381ab8c6ef5677b4ea',1,'stella']]],
-  ['full_5fcapacity_5fmwh_15',['full_capacity_mwh',['../structvbus__battery.html#a0a94efd86d4f38580cfdc1a8b6b9d37c',1,'vbus_battery']]]
+  ['full_5fcapacity_5fmwh_15',['full_capacity_mwh',['../structvbus__battery.html#a0a94efd86d4f38580cfdc1a8b6b9d37c',1,'vbus_battery']]],
+  ['func_16',['func',['../structlucifer__query__pci__info.html#a8bf6b3c296c1cc60fd9a0fd02d924b79',1,'lucifer_query_pci_info']]]
 ];

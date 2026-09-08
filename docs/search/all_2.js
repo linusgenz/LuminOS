@@ -36,7 +36,7 @@ var searchData=
   ['bottomleft_33',['BottomLeft',['../namespacestella.html#afccac33b6508265b2f0406931e73c463a98e5a1c44509157ebcaf46c515c78875',1,'stella']]],
   ['bottommid_34',['BottomMid',['../namespacestella.html#afccac33b6508265b2f0406931e73c463a8a308bbc8a8e6efaa4cd46e8a8108714',1,'stella']]],
   ['bottomright_35',['BottomRight',['../namespacestella.html#afccac33b6508265b2f0406931e73c463a9146bfc669fddc88db2c4d89297d0e9a',1,'stella']]],
-  ['bpp_36',['bpp',['../structcrep__sync.html#ad53d3d30b5b0da355282bdf45d9eb680',1,'crep_sync::bpp'],['../structfb__info.html#a92ce894e1f0a7e27ec85f6838881a39e',1,'fb_info::bpp']]],
+  ['bpp_36',['bpp',['../structfb__info.html#a92ce894e1f0a7e27ec85f6838881a39e',1,'fb_info::bpp'],['../structcrep__sync.html#ad53d3d30b5b0da355282bdf45d9eb680',1,'crep_sync::bpp']]],
   ['brand_37',['brand',['../structcpu__info.html#a261213bcaadbe50b5ac85a91021a0cff',1,'cpu_info']]],
   ['bsearch_38',['bsearch',['../stdlib_8h.html#ae447b9b80b4bff022d1e0f1fa7a36984',1,'stdlib.h']]],
   ['buf_5fpos_39',['buf_pos',['../structFILE.html#a91ee47d34efcc4136d468b8485e1700c',1,'FILE']]],
@@ -44,10 +44,11 @@ var searchData=
   ['buffer_41',['buffer',['../structFILE.html#a50a30e9c79c5614b5175bd3f58ce8590',1,'FILE']]],
   ['bufferram_42',['bufferram',['../structsysinfo.html#a2302054f4587ac2c5f6a6a2fb53509d1',1,'sysinfo']]],
   ['bufsiz_43',['BUFSIZ',['../stdio_8h.html#a72a591cf0a96cf23c63df5c78712dabe',1,'stdio.h']]],
-  ['bus_5fnumber_44',['bus_number',['../structusb__device__info.html#a805b127d2f276adc3895a080b6c7c59d',1,'usb_device_info']]],
-  ['button_45',['button',['../classstella_1_1Button.html#abb3c733b1ffd45edcb98ab069cd40f93',1,'stella::Button::Button()'],['../classstella_1_1Button.html',1,'stella::Button']]],
-  ['button_5fid_46',['button_id',['../structmice__event.html#a9fa6583700ddad470038e5f88c49f3cf',1,'mice_event::button_id'],['../structvbus__display__input__event__t.html#a9bb544c015d25a3336aae7e40bf0f107',1,'vbus_display_input_event_t::button_id']]],
-  ['buttons_47',['buttons',['../structmice__event.html#a60a3a9bb93c8f881df51fa639877f2b2',1,'mice_event::buttons'],['../structvbus__display__input__event__t.html#a49b0790fa3effadf9313c9b93758db5e',1,'vbus_display_input_event_t::buttons']]],
-  ['byte_5forder_48',['BYTE_ORDER',['../endian_8h.html#a1771b7fb65ee640524d0052f229768c3',1,'endian.h']]],
-  ['bzero_49',['bzero',['../strings_8h.html#a59505af7f1c47ff01fdb944801642033',1,'strings.h']]]
+  ['bus_44',['bus',['../structlucifer__query__pci__info.html#ada4ffcb7fed405baa00000cc8e0f730c',1,'lucifer_query_pci_info']]],
+  ['bus_5fnumber_45',['bus_number',['../structusb__device__info.html#a805b127d2f276adc3895a080b6c7c59d',1,'usb_device_info']]],
+  ['button_46',['button',['../classstella_1_1Button.html#abb3c733b1ffd45edcb98ab069cd40f93',1,'stella::Button::Button()'],['../classstella_1_1Button.html',1,'stella::Button']]],
+  ['button_5fid_47',['button_id',['../structmice__event.html#a9fa6583700ddad470038e5f88c49f3cf',1,'mice_event::button_id'],['../structvbus__display__input__event__t.html#a9bb544c015d25a3336aae7e40bf0f107',1,'vbus_display_input_event_t::button_id']]],
+  ['buttons_48',['buttons',['../structmice__event.html#a60a3a9bb93c8f881df51fa639877f2b2',1,'mice_event::buttons'],['../structvbus__display__input__event__t.html#a49b0790fa3effadf9313c9b93758db5e',1,'vbus_display_input_event_t::buttons']]],
+  ['byte_5forder_49',['BYTE_ORDER',['../endian_8h.html#a1771b7fb65ee640524d0052f229768c3',1,'endian.h']]],
+  ['bzero_50',['bzero',['../strings_8h.html#a59505af7f1c47ff01fdb944801642033',1,'strings.h']]]
 ];

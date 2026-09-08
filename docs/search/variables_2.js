@@ -16,7 +16,8 @@ var searchData=
   ['buf_5fsize_13',['buf_size',['../structFILE.html#a135eed1c7b66e33c8454cc442765ef27',1,'FILE']]],
   ['buffer_14',['buffer',['../structFILE.html#a50a30e9c79c5614b5175bd3f58ce8590',1,'FILE']]],
   ['bufferram_15',['bufferram',['../structsysinfo.html#a2302054f4587ac2c5f6a6a2fb53509d1',1,'sysinfo']]],
-  ['bus_5fnumber_16',['bus_number',['../structusb__device__info.html#a805b127d2f276adc3895a080b6c7c59d',1,'usb_device_info']]],
-  ['button_5fid_17',['button_id',['../structvbus__display__input__event__t.html#a9bb544c015d25a3336aae7e40bf0f107',1,'vbus_display_input_event_t::button_id'],['../structmice__event.html#a9fa6583700ddad470038e5f88c49f3cf',1,'mice_event::button_id']]],
-  ['buttons_18',['buttons',['../structvbus__display__input__event__t.html#a49b0790fa3effadf9313c9b93758db5e',1,'vbus_display_input_event_t::buttons'],['../structmice__event.html#a60a3a9bb93c8f881df51fa639877f2b2',1,'mice_event::buttons']]]
+  ['bus_16',['bus',['../structlucifer__query__pci__info.html#ada4ffcb7fed405baa00000cc8e0f730c',1,'lucifer_query_pci_info']]],
+  ['bus_5fnumber_17',['bus_number',['../structusb__device__info.html#a805b127d2f276adc3895a080b6c7c59d',1,'usb_device_info']]],
+  ['button_5fid_18',['button_id',['../structvbus__display__input__event__t.html#a9bb544c015d25a3336aae7e40bf0f107',1,'vbus_display_input_event_t::button_id'],['../structmice__event.html#a9fa6583700ddad470038e5f88c49f3cf',1,'mice_event::button_id']]],
+  ['buttons_19',['buttons',['../structvbus__display__input__event__t.html#a49b0790fa3effadf9313c9b93758db5e',1,'vbus_display_input_event_t::buttons'],['../structmice__event.html#a60a3a9bb93c8f881df51fa639877f2b2',1,'mice_event::buttons']]]
 ];

@@ -3,8 +3,8 @@ var searchData=
   ['n_5fcs_5fprecedes_0',['n_cs_precedes',['../structlconv.html#ad118b68a229527f7e96538ac875169ad',1,'lconv']]],
   ['n_5fsep_5fby_5fspace_1',['n_sep_by_space',['../structlconv.html#ab7ac20ce034900155183b32fc3c6d9a3',1,'lconv']]],
   ['n_5fsign_5fposn_2',['n_sign_posn',['../structlconv.html#ae0bbe6f545952daef5a8cbdd054a184e',1,'lconv']]],
-  ['name_3',['name',['../structrealm__info.html#a94ffed55ca8f366d704a95c4fbff30ab',1,'realm_info::name'],['../structthermal__zone.html#adde4de744bcb1bc959658b75f318436e',1,'thermal_zone::name']]],
-  ['nan_4',['nan',['../math_8h.html#a8abfcc76130f3f991d124dd22d7e69bc',1,'NAN:&#160;math.h'],['../math_8h.html#a8c39d09394a142a95cb76dad859fa28b',1,'nan(const char *):&#160;math.h']]],
+  ['name_3',['name',['../structlucifer__version.html#a36b3a0e69f6650d74474102fbdb1193f',1,'lucifer_version::name'],['../structlucifer__query__pci__info.html#aaa702eead53d2b7fe1e27818859f6da1',1,'lucifer_query_pci_info::name'],['../structrealm__info.html#a94ffed55ca8f366d704a95c4fbff30ab',1,'realm_info::name'],['../structthermal__zone.html#adde4de744bcb1bc959658b75f318436e',1,'thermal_zone::name']]],
+  ['nan_4',['nan',['../math_8h.html#a8c39d09394a142a95cb76dad859fa28b',1,'nan(const char *):&#160;math.h'],['../math_8h.html#a8abfcc76130f3f991d124dd22d7e69bc',1,'NAN:&#160;math.h']]],
   ['nanf_5',['nanf',['../math_8h.html#aaf22b2f3b2d404adba0ec99f7745c300',1,'math.h']]],
   ['nanl_6',['nanl',['../math_8h.html#a074781ea12df1552c3e8827bd20a5b90',1,'math.h']]],
   ['nanosleep_7',['nanosleep',['../userspace_2lib_2include_2time_8h.html#a8cd8e52a299d81cb4ab074de1e300f85',1,'time.h']]],
@@ -31,5 +31,6 @@ var searchData=
   ['nsig_28',['NSIG',['../userspace_2lib_2include_2signal_8h.html#ab83b88daaecc469d1edb90a527ab4a39',1,'signal.h']]],
   ['null_29',['NULL',['../stddef_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4',1,'stddef.h']]],
   ['num_5fconfigurations_30',['num_configurations',['../structusb__device__info.html#a18e5d2888c081b12a42ee813fcdc8010',1,'usb_device_info']]],
-  ['num_5finterfaces_31',['num_interfaces',['../structusb__device__info.html#aadaa4148b1fdfa0996764ae3149e2233',1,'usb_device_info']]]
+  ['num_5fengines_31',['num_engines',['../structlucifer__query__engines.html#a64573d4ca0f30214156276e2aa002d38',1,'lucifer_query_engines']]],
+  ['num_5finterfaces_32',['num_interfaces',['../structusb__device__info.html#aadaa4148b1fdfa0996764ae3149e2233',1,'usb_device_info']]]
 ];

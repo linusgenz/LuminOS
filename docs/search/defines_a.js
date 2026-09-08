@@ -77,5 +77,6 @@ var searchData=
   ['logf_74',['LOGF',['../log__client_8h.html#abf90b9a1dd511a996bcba0a746281601',1,'log_client.h']]],
   ['long_5fmax_75',['LONG_MAX',['../limits_8h.html#a50fece4db74f09568b2938db583c5655',1,'limits.h']]],
   ['long_5fmin_76',['LONG_MIN',['../limits_8h.html#ae8a44c5a7436466221e0f3859d02420f',1,'limits.h']]],
-  ['lucifer_5fioctl_5fquery_77',['LUCIFER_IOCTL_QUERY',['../lucifer__drm_8h.html#a735cf9ac6402825a4ca8ad06d7250702',1,'lucifer_drm.h']]]
+  ['lucifer_5fioctl_5fquery_77',['LUCIFER_IOCTL_QUERY',['../lucifer__drm_8h.html#a735cf9ac6402825a4ca8ad06d7250702',1,'lucifer_drm.h']]],
+  ['lucifer_5fioctl_5fversion_78',['LUCIFER_IOCTL_VERSION',['../lucifer__drm_8h.html#a2e436cc971b02e8c70bea47c3f795888',1,'lucifer_drm.h']]]
 ];
