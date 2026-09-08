@@ -109,9 +109,8 @@ set(IRIS_SOURCES
         iris_disk_cache.c
         iris_utrace.c
 
-        # Eigenes KMD-Backend statt i915/iris_kmd_backend.c bzw.
-        # xe/iris_kmd_backend.c
         lucifer/iris_kmd_backend.c
+        lucifer/iris_bufmgr.c
 
         i915/iris_batch.c
         i915/iris_bufmgr.c

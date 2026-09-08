@@ -51,6 +51,7 @@
 #include "iris_kmd_backend.h"
 #include "i915/iris_bufmgr.h"
 #include "xe/iris_bufmgr.h"
+#include "lucifer/iris_bufmgr.h"
 
 #include <xf86drm.h>
 
@@ -1758,6 +1759,7 @@ void *
 iris_bo_map(struct util_debug_callback *dbg,
             struct iris_bo *bo, unsigned flags)
 {
+   printf("iris_bo_map: %p\n", bo);
    struct iris_bufmgr *bufmgr = bo->bufmgr;
    void *map = NULL;
 
@@ -1872,6 +1874,10 @@ iris_bufmgr_destroy_global_vm(struct iris_bufmgr *bufmgr)
       intel_bind_timeline_finish(&bufmgr->bind_timeline, bufmgr->fd);
       iris_xe_destroy_global_vm(bufmgr);
       break;
+   case INTEL_KMD_TYPE_LUCIFER:
+      iris_lucifer_destroy_global_vm(bufmgr);
+      break;
+
    default:
       UNREACHABLE("missing");
    }
@@ -2391,6 +2397,9 @@ iris_bufmgr_init_global_vm(struct iris_bufmgr *bufmgr)
       bufmgr->use_global_vm = iris_xe_init_global_vm(bufmgr, &bufmgr->global_vm_id);
       /* Xe requires VM */
       return bufmgr->use_global_vm;
+   case INTEL_KMD_TYPE_LUCIFER:
+      bufmgr->use_global_vm = iris_lucifer_init_global_vm(bufmgr, &bufmgr->global_vm_id);
+      return bufmgr->use_global_vm;
    default:
       UNREACHABLE("missing");
       return false;
@@ -2671,6 +2680,7 @@ iris_bufmgr_get_for_fd(int fd, bool bo_reuse)
 #endif
 
    bufmgr = iris_bufmgr_create(&devinfo, fd, bo_reuse);
+   printf("iris_bufmgr_create: %p\n", bufmgr);
    if (bufmgr)
       list_addtail(&bufmgr->link, &global_bufmgr_list);
 
