@@ -28,6 +28,7 @@
 #include "ggtt_allocator.h"
 #include <gpu/intel/regs/pci_config_regs.h>
 
+#include "intel_ppgtt.h"
 #include "vespera/devices/char_device.h"
 #include "vespera/devices/device_info.h"
 #include "vespera/devices/kernel_device.h"
@@ -221,6 +222,14 @@ namespace gpu::intel::core {
         };
 
         [[nodiscard]] FuseTopology query_fuse_topology() const;
+
+        static constexpr usize MAX_LUCIFER_VMS = 64;
+        IntelPpgtt* vm_slots_[MAX_LUCIFER_VMS] = {};
+
+        [[nodiscard]] u32 create_vm();
+        bool destroy_vm(u32 vm_id);
+        [[nodiscard]] IntelPpgtt* lookup_vm(u32 vm_id) const;
+
 
         volatile INTEL_IGP_PCI_CONFIG* igp_cfg_;
         pci::pci_id pci_id_;

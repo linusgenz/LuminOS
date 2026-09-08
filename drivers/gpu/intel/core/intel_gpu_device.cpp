@@ -386,6 +386,50 @@ namespace gpu::intel::core {
         return true;
     }
 
+    u32 IntelGpuDevice::create_vm() {
+        for (usize i = 0; i < MAX_LUCIFER_VMS; ++i) {
+            if (vm_slots_[i] != nullptr) {
+                continue;
+            }
+
+            auto* ppgtt = new IntelPpgtt(ggtt_alloc_);
+            if (!ppgtt->init()) {
+                delete ppgtt;
+                Log::log_dbc("intel-gpu: VM_CREATE failed (IntelPpgtt::init)");
+                return 0;
+            }
+
+            vm_slots_[i] = ppgtt;
+            return static_cast<u32>(i) + 1;
+        }
+
+        Log::log_dbc("intel-gpu: VM_CREATE failed (no free VM slots)");
+        return 0;
+    }
+
+    bool IntelGpuDevice::destroy_vm(const u32 vm_id) {
+        if (vm_id == 0 || vm_id > MAX_LUCIFER_VMS) {
+            return false;
+        }
+
+        const usize slot = vm_id - 1;
+        if (vm_slots_[slot] == nullptr) {
+            return false;
+        }
+
+        delete vm_slots_[slot];
+        vm_slots_[slot] = nullptr;
+        return true;
+    }
+
+    IntelPpgtt* IntelGpuDevice::lookup_vm(const u32 vm_id) const {
+        if (vm_id == 0 || vm_id > MAX_LUCIFER_VMS) {
+            return nullptr;
+        }
+        return vm_slots_[vm_id - 1];
+    }
+
+
     int IntelGpuDevice::ioctl(CharFile*, const u32 request, void* arg) {
         if (request == LUCIFER_IOCTL_VERSION) {
             auto* ver = static_cast<lucifer_version*>(arg);
@@ -409,7 +453,32 @@ namespace gpu::intel::core {
             return 0;
         }
 
+        if (request == LUCIFER_IOCTL_VM_CREATE) {
+            auto* create = static_cast<lucifer_vm_create*>(arg);
+            if (!create) {
+                return -1;
+            }
+
+            const u32 vm_id = create_vm();
+            if (vm_id == 0) {
+                return -1;
+            }
+
+            create->vm_id = vm_id;
+            return 0;
+        }
+
+        if (request == LUCIFER_IOCTL_VM_DESTROY) {
+            const auto* destroy = static_cast<lucifer_vm_destroy*>(arg);
+            if (!destroy) {
+                return -1;
+            }
+
+            return destroy_vm(destroy->vm_id) ? 0 : -1;
+        }
+
         if (request != LUCIFER_IOCTL_QUERY) {
+            Log::debug("unknown DRM lucifer ioctl. request=%x", request);
             return -1;
         }
 
@@ -499,7 +568,7 @@ namespace gpu::intel::core {
                 out->total_size = ggtt_alloc_.usable_size_bytes();
 
                 const u64 used_pages = static_cast<u64>(ggtt_alloc_.persistent_used_pages()) +
-                                       static_cast<u64>(ggtt_alloc_.transient_used_pages());
+                    static_cast<u64>(ggtt_alloc_.transient_used_pages());
 
                 out->used = used_pages * PAGE_SIZE;
                 break;
