@@ -472,7 +472,9 @@ namespace ext4 {
 
         // Extent-Cache parallel füllen
         inode_cache_[victim_idx].extents.clear();
-        parse_extents_raw(disk_inode, inode_cache_[victim_idx].extents);
+        if (!parse_extents_raw(disk_inode, inode_cache_[victim_idx].extents)) {
+            inode_cache_[victim_idx].extents.clear();
+        }
 
         out_inode = disk_inode;
         return true;
@@ -490,7 +492,9 @@ namespace ext4 {
 
                 // Extent-Cache aktualisieren, da sich Inode geändert haben könnte
                 inode_cache_[i].extents.clear();
-                parse_extents_raw(inode, inode_cache_[i].extents);
+                if (!parse_extents_raw(inode, inode_cache_[i].extents)) {
+                    inode_cache_[i].extents.clear();
+                }
                 return true;
             }
         }
@@ -527,7 +531,9 @@ namespace ext4 {
         inode_cache_[victim_idx].lru_seq = ++lru_counter_;
 
         inode_cache_[victim_idx].extents.clear();
-        parse_extents_raw(inode, inode_cache_[victim_idx].extents);
+        if (!parse_extents_raw(inode, inode_cache_[victim_idx].extents)) {
+            inode_cache_[victim_idx].extents.clear();
+        }
 
         return true;
     }
@@ -866,6 +872,12 @@ namespace ext4 {
 
     // extend tree
 
+    // Decodes the on-disk `ee_len` field of an ext4 Extent per the ext4 extent-format spec
+    static u32 extent_len_and_unwritten(u16 raw_ee_len, bool& out_unwritten) {
+        out_unwritten = raw_ee_len > 32768;
+        return out_unwritten ? static_cast<u32>(raw_ee_len - 32768) : static_cast<u32>(raw_ee_len);
+    }
+
     bool FileSystem::parse_extents_node(u64 phys_block, u16 depth, Vector<ExtentMap>& out_extents) const {
         const u32 bsize = get_block_size();
         auto* buf = static_cast<u8*>(kernel::memory::malloc(bsize));
@@ -893,7 +905,9 @@ namespace ext4 {
                 memcpy(&ex, base + i * sizeof(Extent), sizeof(Extent));
 
                 const u64 phys_start = (static_cast<u64>(ex.ee_start_hi) << 32) | ex.ee_start_lo;
-                const u32 len = ex.ee_len & 0x7FFF;
+                bool unwritten = false;
+                const u32 len = extent_len_and_unwritten(ex.ee_len, unwritten);
+                if (len == 0) continue; // defensive: skip degenerate zero-length entries
 
                 out_extents.push_back({ex.ee_block, len, phys_start});
             }
@@ -925,7 +939,9 @@ namespace ext4 {
                 memcpy(&ex, base + i * sizeof(Extent), sizeof(Extent));
 
                 const u64 phys_start = (static_cast<u64>(ex.ee_start_hi) << 32) | ex.ee_start_lo;
-                const u32 len = ex.ee_len & 0x7FFF;
+                bool unwritten = false;
+                const u32 len = extent_len_and_unwritten(ex.ee_len, unwritten);
+                if (len == 0) continue; // defensive: skip degenerate zero-length entries
 
                 out_extents.push_back({ex.ee_block, len, phys_start});
             }
@@ -1143,11 +1159,15 @@ namespace ext4 {
                 reinterpret_cast<u8*>(eh) + sizeof(ExtentHeader) + (eh->eh_entries - 1) * sizeof(Extent)
             );
 
-            const u64 last_phys_end =
-                ((static_cast<u64>(last->ee_start_hi) << 32) | last->ee_start_lo) + (last->ee_len & 0x7FFFu);
-            const u32 last_log_end = last->ee_block + (last->ee_len & 0x7FFFu);
+            bool last_unwritten = false;
+            const u32 last_len = extent_len_and_unwritten(last->ee_len, last_unwritten);
 
-            if (last_log_end == logical_block && last_phys_end == phys_block && (last->ee_len & 0x7FFFu) < 0x7FFF) {
+            const u64 last_phys_end =
+                ((static_cast<u64>(last->ee_start_hi) << 32) | last->ee_start_lo) + last_len;
+            const u32 last_log_end = last->ee_block + last_len;
+
+            if (last_log_end == logical_block && last_phys_end == phys_block && !last_unwritten &&
+                last_len < 32768) {
                 last->ee_len++;
                 return true;
             }
@@ -1293,6 +1313,8 @@ namespace ext4 {
         auto* tmp = static_cast<u8*>(kernel::memory::malloc(bsize)); // für unaligned Ränder
         if (!tmp) return Result<usize>::err(Error::NoMem);
 
+        memset(out, 0, size);
+
         const u64 read_end = offset + size;
 
         for (usize ei = 0; ei < extents->size() && bytes_read < size; ++ei) {
@@ -1386,7 +1408,11 @@ namespace ext4 {
             time::update_access(inode);
             write_inode(inode_number, inode);
         }
-        return Result<usize>::ok(bytes_read);
+
+        // The whole [offset, offset+size) range was accounted for above:
+        // extent-backed bytes were copied from disk, any uncovered bytes
+        // were already zeroed by the memset before the loop.
+        return Result<usize>::ok(size);
     }
 
     Result<usize> FileSystem::write_file(u32 inode_number, u64 offset, usize size, const void* buf) {
