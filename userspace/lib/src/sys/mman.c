@@ -26,13 +26,33 @@
 #include <sysstd.h>
 
 #include "errno.h"
+#include "stdlib.h"
+#include "vespera/handles.h"
+#include "../internal/fd_table.h"
 
-void* mmap(void* addr, size_t length, uint64_t prot, uint64_t flags, uint64_t handle, size_t offset) {
-    int64_t ret = sys_mmap((uint64_t)addr, length, prot, flags, handle, offset);
+void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
+    fd_table_init();
+
+    FILE_HANDLE handle = INVALID_HANDLE;
+
+    if (!(flags & MAP_ANONYMOUS) && fd != -1) {
+        if (!fd_table_valid(fd)) {
+            errno = EBADH;
+            return MAP_FAILED;
+        }
+        handle = fd_table_get(fd);
+        if (handle == INVALID_HANDLE) {
+            errno = EBADH;
+            return MAP_FAILED;
+        }
+    }
+
+    int64_t ret = sys_mmap((uint64_t)addr, length, (uint64_t)prot, (uint64_t)flags, (uint64_t)handle, (size_t)offset);
     if (ret < 0) {
-        errno = -ret;
+        errno = (int)(-ret);
         return MAP_FAILED;
     }
+
     return (void*)ret;
 }
 

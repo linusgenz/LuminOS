@@ -43,24 +43,15 @@ class WaitQueue {
     // We set wakeup_ns, make sure to set the wakeup_ns after adding into waitqueue
     void add_wait(Unit *u);
     void wake_all();
+    void wake_all_irq();
     void wake_one();
+    void wake_one_irq();
     bool remove(const Unit *u);
     u32 wake_matching(u32 max_wake, bool (*predicate)(const Unit*));
-};
 
-class WaitQueueDbg {
-    Spinlock lock_{};
-    WaitQueueEntry *head_{nullptr};
-    WaitQueueEntry *tail_{nullptr};
-
-public:
-    WaitQueueDbg();
-    // We set wakeup_ns, make sure to set the wakeup_ns after adding into waitqueue
-    void add_wait(Unit *u);
-    void wake_all();
-    void wake_one();
-    bool remove(const Unit *u);
-    u32 wake_matching(u32 max_wake, bool (*predicate)(const Unit*));
+private:
+    void wake_one_impl();
+    void wake_all_impl();
 };
 
 #endif  // VESPERAOS_WAIT_QUEUE_H

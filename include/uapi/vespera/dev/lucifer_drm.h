@@ -33,6 +33,20 @@ extern "C" {
 #define LUCIFER_IOCTL_QUERY   IOWR('L', 0x01, struct lucifer_query)
 #define LUCIFER_IOCTL_VERSION IOWR('L', 0x02, struct lucifer_version)
 
+#define LUCIFER_IOCTL_VM_CREATE        IOWR('L', 0x03, struct lucifer_vm_create)
+#define LUCIFER_IOCTL_VM_DESTROY       IOW ('L', 0x04, struct lucifer_vm_destroy)
+
+#define LUCIFER_IOCTL_GEM_CREATE       IOWR('L', 0x05, struct lucifer_gem_create)
+#define LUCIFER_IOCTL_GEM_CLOSE        IOW ('L', 0x06, struct lucifer_gem_close)
+#define LUCIFER_IOCTL_GEM_MMAP_OFFSET  IOWR('L', 0x07, struct lucifer_gem_mmap_offset)
+#define LUCIFER_IOCTL_GEM_USERPTR      IOWR('L', 0x08, struct lucifer_gem_userptr)
+#define LUCIFER_IOCTL_GEM_MADVISE      IOWR('L', 0x09, struct lucifer_gem_madvise)
+#define LUCIFER_IOCTL_GEM_SET_CACHING  IOW ('L', 0x0A, struct lucifer_gem_set_caching)
+
+#define LUCIFER_IOCTL_VM_BIND          IOW ('L', 0x0B, struct lucifer_vm_bind)
+
+#define LUCIFER_IOCTL_EXEC             IOW ('L', 0x0C, struct lucifer_exec)
+
 struct lucifer_version {
     int32_t version_major;
     int32_t version_minor;
@@ -151,6 +165,138 @@ struct lucifer_query_pci_info {
 
     /* DeviceManager node name, e.g. "dri/card0" */
     char name[16];
+};
+
+/**
+ * One PPGTT ("vm") per realm.
+ *
+ * A realm calls LUCIFER_IOCTL_VM_CREATE once (typically right after opening
+ * the device node) and gets back a vm_id identifying its private GPU
+ * address space. GEM objects are not tied to a vm_id at creation time --
+ * mirrors Xe -- they only become resident in a given PPGTT once bound via
+ * LUCIFER_IOCTL_VM_BIND. All subsequent VM_BIND/VM_UNBIND/EXEC calls
+ * reference that vm_id.
+ */
+enum lucifer_vm_create_flags {
+    LUCIFER_VM_CREATE_FLAG_NONE = 0,
+};
+
+struct lucifer_vm_create {
+    uint32_t flags; /**< enum lucifer_vm_create_flags */
+    uint32_t vm_id; /**< out */
+};
+
+struct lucifer_vm_destroy {
+    uint32_t vm_id;
+    uint32_t pad0;
+};
+
+enum lucifer_gem_create_flags {
+    LUCIFER_GEM_CREATE_FLAG_SCANOUT        = 1u << 0,
+    LUCIFER_GEM_CREATE_FLAG_NEEDS_VISIBLE  = 1u << 1,
+    LUCIFER_GEM_CREATE_FLAG_NO_COMPRESSION = 1u << 2,
+};
+
+enum lucifer_gem_cpu_caching {
+    LUCIFER_GEM_CPU_CACHING_WB = 0,
+    LUCIFER_GEM_CPU_CACHING_WC = 1,
+};
+
+struct lucifer_gem_create {
+    uint64_t size; /**< In: requested size, rounded up to mem_alignment */
+
+    uint32_t placement; /**< Bitmask of memory region instances */
+    uint32_t flags;      /**< enum lucifer_gem_create_flags */
+
+    uint32_t cpu_caching; /**< enum lucifer_gem_cpu_caching */
+    uint32_t handle;       /**< out */
+};
+
+struct lucifer_gem_close {
+    uint32_t handle;
+    uint32_t pad0;
+};
+
+/**
+ * Returns a fake mmap offset the caller then passes to VesperaOS's mmap()
+ * syscall against the device fd (mirrors DRM_IOCTL_*_GEM_MMAP_OFFSET).
+ */
+struct lucifer_gem_mmap_offset {
+    uint32_t handle; /**< in */
+    uint32_t pad0;
+    uint64_t offset; /**< out */
+};
+
+/**
+ * Wraps an existing userspace range in a GEM handle, analogous to
+ * xe_gem_create_userptr(): no backing kernel allocation happens here, the
+ * range is only pinned/bound on LUCIFER_VM_BIND_OP_MAP_USERPTR.
+ */
+struct lucifer_gem_userptr {
+    uint64_t ptr;  /**< in, user VA, page-aligned */
+    uint64_t size; /**< in */
+
+    uint32_t handle; /**< out */
+    uint32_t pad0;
+};
+
+enum lucifer_madvice {
+    LUCIFER_MADVICE_WILL_NEED = 0,
+    LUCIFER_MADVICE_DONT_NEED = 1,
+};
+
+struct lucifer_gem_madvise {
+    uint32_t handle; /**< in */
+    uint32_t state;   /**< in, enum lucifer_madvice */
+
+    uint32_t retained; /**< out, nonzero if still resident */
+    uint32_t pad0;
+};
+
+struct lucifer_gem_set_caching {
+    uint32_t handle;
+    uint32_t cached; /**< 0 or 1 */
+};
+
+/**
+ * Binds or unbinds a GEM object (or a userptr range) into the PPGTT
+ * identified by vm_id at a caller-chosen GPU virtual address. Backs
+ * iris_kmd_backend::gem_vm_bind / gem_vm_unbind. Synchronous: completes
+ * (or fails) before the ioctl returns, no fence/sync objects involved.
+ */
+enum lucifer_vm_bind_op {
+    LUCIFER_VM_BIND_OP_MAP         = 0,
+    LUCIFER_VM_BIND_OP_UNMAP       = 1,
+    LUCIFER_VM_BIND_OP_MAP_USERPTR = 2,
+};
+
+enum lucifer_vm_bind_flags {
+    LUCIFER_VM_BIND_FLAG_DUMPABLE = 1u << 0,
+};
+
+struct lucifer_vm_bind {
+    uint32_t vm_id;  /**< in */
+    uint32_t op;      /**< in, enum lucifer_vm_bind_op */
+
+    uint32_t handle;    /**< in, GEM handle (ignored for UNMAP) */
+    uint32_t pat_index; /**< in */
+
+    uint64_t obj_offset; /**< in, offset into the object (or user VA for MAP_USERPTR) */
+    uint64_t range;       /**< in, size in bytes */
+    uint64_t addr;         /**< in, GPU virtual address (48b) */
+
+    uint32_t flags; /**< in, enum lucifer_vm_bind_flags */
+    uint32_t pad0;
+};
+
+/** Minimal batch submission: one batch buffer's GPU address against a
+ *  given vm_id / engine. */
+struct lucifer_exec {
+    uint32_t vm_id;  /**< in */
+    uint32_t engine;  /**< in, enum lucifer_engine_class */
+
+    uint64_t batch_addr; /**< in, GPU virtual address of the batch to run */
+    uint64_t batch_len;   /**< in, length in bytes */
 };
 
 #ifdef __cplusplus

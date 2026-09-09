@@ -35,6 +35,7 @@ class CharDevice;
 
 struct DevfsEntry : VirtualFsEntry<KernelDevice> {
     CharFile* cf;
+    u32 rdev_minor = 0;  // assigned once at register_device() time, reused by stat()
 };
 
 class DevFs : public VirtualFilesystem<KernelDevice, DevfsEntry> {
@@ -54,6 +55,15 @@ class DevFs : public VirtualFilesystem<KernelDevice, DevfsEntry> {
     static isize ioctl(const VfsNode* node, u32 cmd, void* arg);
     static void close(VfsNode* node);
     static int poll(const VfsNode* node);
+
+    static CharFile* get_char_file(const VfsNode* node);
+
+    static VoidResult stat(const VfsNode* node, struct stat* out);
+
+   private:
+    static u32 next_char_minor_;
+    static u32 next_block_minor_;
+    static u32 next_other_minor_;
 };
 
 #endif  // VESPERAOS_DEVFS_H

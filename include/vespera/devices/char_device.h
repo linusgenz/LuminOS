@@ -25,6 +25,7 @@
 #define VESPERAOS_CHAR_DEVICE_BASE_H
 
 #include <klib/string.h>
+#include <vespera/mm/vm_backing.h>
 #include <vespera_errno.h>
 
 #include "device_manager.h"
@@ -55,6 +56,11 @@ class CharDevice {
 
     virtual int poll(CharFile*) {
         return 0;
+    }
+
+    [[nodiscard]] virtual kernel::vm::VmBackingObject* get_backing_object(CharFile*, u64 offset) {
+        (void)offset;
+        return nullptr;
     }
 
     [[nodiscard]] virtual bool is_tty() const {
