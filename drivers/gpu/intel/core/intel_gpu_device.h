@@ -23,6 +23,7 @@
 #include <pci/pci_id.h>
 #include <vespera/interrupts.h>
 #include <vespera/mm/addr.h>
+#include <vespera/mm/vm_backing.h>
 #include <vespera_errno.h>
 
 #include "ggtt_allocator.h"
@@ -147,13 +148,29 @@ namespace gpu::intel::core {
             bcs_ = engine;
         }
 
-        int open(CharFile** out_cf) override { return 0; }
-        int release(CharFile* cf) override { return 0; }
+        int open(CharFile** out_cf) override;
+        int release(CharFile* cf) override;
+
+
+        struct GemObjectInfo {
+            phys_addr_t phys_addr;
+            u64 size;
+        };
+        [[nodiscard]] bool query_gem_object(u32 handle, GemObjectInfo* out);
 
         isize read(CharFile* cf, void* buffer, usize count, usize offset) override { return -ENOTTY; };
         isize write(CharFile* cf, const void* buffer, usize count) override { return -ENOTTY; };
 
         int ioctl(CharFile*, u32, void*) override;
+
+        /// Decodes `offset` back into a GEM handle via
+        /// gem_handle_from_mmap_offset() and hands back an
+        /// IntelGemBackingObject for it, so kernel::vm::mmap() can map a
+        /// GEM object without linking against anything GEM- or GPU-
+        /// specific. Returns nullptr for userptr handles (no kernel-owned
+        /// phys backing — see query_gem_object()) or an offset that
+        /// doesn't decode to a live handle.
+        [[nodiscard]] kernel::vm::VmBackingObject* get_backing_object(CharFile* cf, u64 offset) override;
 
         /// Drives one ForceWake domain: write request, poll ack, timeout.
         /// Stateless with respect to which domain is being woken — the
@@ -231,8 +248,6 @@ namespace gpu::intel::core {
         bool destroy_vm(u32 vm_id);
         [[nodiscard]] IntelPpgtt* lookup_vm(u32 vm_id) const;
 
-        bool vm_bind(const lucifer_vm_bind& args);
-
         /// Minimal bring-up bookkeeping for one GEM object. Deliberately
         /// thin for now — just enough for gem_create/gem_create_userptr/
         /// gem_close to round-trip a handle. No backing allocation lives
@@ -246,15 +261,32 @@ namespace gpu::intel::core {
             u32 cpu_caching = 0;   ///< enum lucifer_gem_cpu_caching
             bool is_userptr = false;
             u64 userptr = 0;       ///< user VA, only valid when is_userptr
+
+            /// Physical backing, allocated up front in gem_create()
+            phys_addr_t phys_addr = phys_addr_t{};
         };
 
         static constexpr usize MAX_LUCIFER_GEM_OBJECTS = 4096;
         LucGemObject gem_slots_[MAX_LUCIFER_GEM_OBJECTS] = {};
 
-        [[nodiscard]] u32 gem_create(const lucifer_gem_create& args);
-        [[nodiscard]] u32 gem_create_userptr(const lucifer_gem_userptr& args);
+        [[nodiscard]] u32 gem_create(const struct lucifer_gem_create& args);
+        [[nodiscard]] u32 gem_create_userptr(const struct lucifer_gem_userptr& args);
         bool gem_close(u32 handle);
         [[nodiscard]] LucGemObject* lookup_gem(u32 handle);
+
+        /// Encodes a GEM handle into a page-aligned "fake" mmap offset for
+        /// LUCIFER_IOCTL_GEM_MMAP_OFFSET
+        [[nodiscard]] bool gem_mmap_offset(const struct lucifer_gem_mmap_offset& args, u64* out_offset);
+
+        /// Inverse of gem_mmap_offset(): recovers the GEM handle encoded in
+        /// an mmap() offset. Returns 0 (invalid handle) if `offset` isn't
+        /// page-aligned or doesn't decode to a live GEM object.
+        [[nodiscard]] u32 gem_handle_from_mmap_offset(u64 offset) const;
+
+        /// Binds/unbinds a GEM object (or userptr range) into the PPGTT
+        /// identified by vm_id.
+        bool vm_bind(const struct lucifer_vm_bind& args);
+
 
         volatile INTEL_IGP_PCI_CONFIG* igp_cfg_;
         pci::pci_id pci_id_;

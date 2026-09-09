@@ -36,6 +36,7 @@
 #include "filesystem/devfs.h"
 #include "gpu/intel/rcs/intel_rcs.h"
 #include "gpu/intel/regs/fuse_regs.h"
+#include "intel_gem_backing.h"
 #include "uapi/vespera/dev/lucifer_drm.h"
 
 namespace gpu::intel::core {
@@ -57,7 +58,7 @@ namespace gpu::intel::core {
         kd_ = DeviceManager::register_device(
             DeviceDescriptor{}
             .set_name(name)
-            .set_type(DeviceType::Gpu)
+            .set_type(DeviceType::Char)
             .set_class(DeviceClass::Graphics)
             .set_bus(BusType::Pci)
             .set_controller(ControllerType::IntelGpu)
@@ -430,6 +431,13 @@ namespace gpu::intel::core {
     }
 
     u32 IntelGpuDevice::gem_create(const lucifer_gem_create& args) {
+        const usize page_count = (args.size + PAGE_SIZE - 1) / PAGE_SIZE;
+        const phys_addr_t phys = kernel::memory::request_pages_phys(page_count);
+        if (phys_null(phys)) {
+            Log::log_dbc("intel-gpu: GEM_CREATE failed (request_pages_phys)");
+            return 0;
+        }
+
         for (usize i = 0; i < MAX_LUCIFER_GEM_OBJECTS; ++i) {
             if (gem_slots_[i].size != 0 || gem_slots_[i].is_userptr) {
                 continue;
@@ -442,6 +450,7 @@ namespace gpu::intel::core {
                 .cpu_caching = args.cpu_caching,
                 .is_userptr = false,
                 .userptr = 0,
+                .phys_addr = phys,
             };
 
             return static_cast<u32>(i) + 1;
@@ -493,6 +502,138 @@ namespace gpu::intel::core {
             return nullptr; // slot empty
         }
         return obj;
+    }
+
+    bool IntelGpuDevice::vm_bind(const lucifer_vm_bind& args) {
+        IntelPpgtt* vm = lookup_vm(args.vm_id);
+        if (!vm) {
+            Log::log_dbc("intel-gpu: VM_BIND failed (bad vm_id)");
+            return false;
+        }
+
+        if (args.op == LUCIFER_VM_BIND_OP_UNMAP) {
+            // Simple first pass: point the range at the scratch page instead
+            // of tearing down PT/PD/PDPT levels. Matches the scratch chain
+            // IntelPpgtt already maintains for unmapped ranges elsewhere.
+            return vm->insert_range(make_gfx(args.addr), make_phys(vm->scratch_page_phys_addr_bytes()), args.range,
+                                     PpgttCaching::NONE, false);
+        }
+
+        phys_addr_t phys_start;
+        PpgttCaching caching;
+        if (args.op == LUCIFER_VM_BIND_OP_MAP_USERPTR) {
+            // Bring-up limitation: userptr ranges aren't pinned/translated to
+            // physical pages yet (no get_user_pages()-equivalent wired up
+            // here), so there is no phys backing to hand insert_range().
+            // Fail loudly rather than binding garbage.
+            Log::log_dbc("intel-gpu: VM_BIND MAP_USERPTR not yet implemented");
+            return false;
+        } else {
+            LucGemObject* obj = lookup_gem(args.handle);
+            if (!obj || obj->is_userptr) {
+                Log::log_dbc("intel-gpu: VM_BIND failed (bad handle)");
+                return false;
+            }
+
+            phys_start = phys_add(obj->phys_addr, args.obj_offset);
+
+            // NOTE: args.pat_index is *not* used for caching here. Gen9.5
+            // never populates devinfo->pat in Mesa (that table is only
+            // filled from GFX12_PAT_ENTRIES onward)
+            caching = obj->cpu_caching == LUCIFER_GEM_CPU_CACHING_WC
+                          ? PpgttCaching::NONE
+                          : PpgttCaching::LLC;
+        }
+
+        // Bring-up: everything bound today is writable (matches Mesa's BOs,
+        // which are all CPU+GPU read/write). Read-only mappings would need a
+        // flag threaded through lucifer_vm_bind first.
+        constexpr bool writable = true;
+
+        return vm->insert_range(make_gfx(args.addr), phys_start, args.range, caching, writable);
+    }
+
+    bool IntelGpuDevice::query_gem_object(const u32 handle, GemObjectInfo* out) {
+        if (!out) {
+            return false;
+        }
+
+        const LucGemObject* obj = lookup_gem(handle);
+        if (!obj || obj->is_userptr) {
+            // Userptr objects have no kernel-owned phys backing (see
+            // vm_bind()'s MAP_USERPTR path) — nothing for mmap() to map yet.
+            return false;
+        }
+
+        *out = GemObjectInfo{.phys_addr = obj->phys_addr, .size = obj->size};
+        return true;
+    }
+
+    bool IntelGpuDevice::gem_mmap_offset(const lucifer_gem_mmap_offset& args, u64* out_offset) {
+        if (!out_offset) {
+            return false;
+        }
+
+        const LucGemObject* obj = lookup_gem(args.handle);
+        if (!obj || obj->is_userptr) {
+            Log::log_dbc("intel-gpu: GEM_MMAP_OFFSET failed (bad handle)");
+            return false;
+        }
+
+        // Handle -> offset is a direct page-number encoding (handle 1 lands
+        // at page 1, etc.) rather than a separate lookup table: handles are
+        // already small, dense, 1-based integers (see gem_create()'s slot
+        // scheme), so this is already unique and trivially reversible via
+        // gem_handle_from_mmap_offset() below. Revisit if GEM handles ever
+        // stop being small dense integers.
+        *out_offset = static_cast<u64>(args.handle) * PAGE_SIZE;
+        return true;
+    }
+
+    u32 IntelGpuDevice::gem_handle_from_mmap_offset(const u64 offset) const {
+        if (offset == 0 || offset % PAGE_SIZE != 0) {
+            return 0;
+        }
+
+        const u64 handle = offset / PAGE_SIZE;
+        if (handle == 0 || handle > MAX_LUCIFER_GEM_OBJECTS) {
+            return 0;
+        }
+
+        return static_cast<u32>(handle);
+    }
+
+    kernel::vm::VmBackingObject* IntelGpuDevice::get_backing_object(CharFile*, const u64 offset) {
+        const u32 handle = gem_handle_from_mmap_offset(offset);
+        if (handle == 0) {
+            Log::log_dbc("intel-gpu: mmap failed (offset does not decode to a GEM handle)");
+            return nullptr;
+        }
+
+        GemObjectInfo info{};
+        if (!query_gem_object(handle, &info)) {
+            Log::log_dbc("intel-gpu: mmap failed (bad handle or userptr object)");
+            return nullptr;
+        }
+
+        return new IntelGemBackingObject(this, handle);
+    }
+
+    int IntelGpuDevice::open(CharFile** out_cf) {
+        if (!out_cf) {
+            return -EINVAL;
+        }
+
+        auto* cf = new CharFile{};
+        cf->driver_private = this;
+
+        *out_cf = cf;
+        return 0;
+    }
+
+    int IntelGpuDevice::release(CharFile* cf) {
+        delete cf;
+        return 0;
     }
 
 
@@ -580,6 +721,24 @@ namespace gpu::intel::core {
             }
 
             return gem_close(close->handle) ? 0 : -1;
+        }
+
+        if (request == LUCIFER_IOCTL_VM_BIND) {
+            const auto* bind = static_cast<lucifer_vm_bind*>(arg);
+            if (!bind) {
+                return -1;
+            }
+
+            return vm_bind(*bind) ? 0 : -1;
+        }
+
+        if (request == LUCIFER_IOCTL_GEM_MMAP_OFFSET) {
+            auto* mmap_offset = static_cast<lucifer_gem_mmap_offset*>(arg);
+            if (!mmap_offset) {
+                return -1;
+            }
+
+            return gem_mmap_offset(*mmap_offset, &mmap_offset->offset) ? 0 : -1;
         }
 
         if (request != LUCIFER_IOCTL_QUERY) {

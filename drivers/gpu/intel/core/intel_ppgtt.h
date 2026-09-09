@@ -87,6 +87,10 @@ namespace gpu::intel::core {
             return pml4_phys_addr_;
         }
 
+        [[nodiscard]] u64 scratch_page_phys_addr_bytes() const {
+            return scratch_page_phys_addr_;
+        }
+
     private:
         GgttAllocator& ggtt_;
 
