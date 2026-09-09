@@ -15,7 +15,7 @@ var searchData=
   ['activate_12',['activate',['../unionvbus__payload__t.html#a6635ea888a53e20580fa772e6c4aa153',1,'vbus_payload_t']]],
   ['active_5freaders_13',['active_readers',['../structpthread__rwlock__t.html#a0f9b9e1f6af2da73f2a909103814ea3c',1,'pthread_rwlock_t']]],
   ['active_5fwriter_14',['active_writer',['../structpthread__rwlock__t.html#a290911bac11d36133634e52f9d2666fd',1,'pthread_rwlock_t']]],
-  ['addr_15',['addr',['../structlarge__seg.html#aaa681d5c790748892a94f9125f3d0335',1,'large_seg']]],
+  ['addr_15',['addr',['../structlucifer__vm__bind.html#a319d0acf1877967e7d5a8a2666bb0fab',1,'lucifer_vm_bind::addr'],['../structlarge__seg.html#aaa681d5c790748892a94f9125f3d0335',1,'large_seg::addr']]],
   ['align_16',['align',['../namespacestella.html#afccac33b6508265b2f0406931e73c463',1,'stella::Align'],['../classstella_1_1Widget.html#a5bd57c390b5a662e4e2b095cacaab6bb',1,'stella::Widget::align()']]],
   ['alignas_17',['alignas',['../stdalign_8h.html#ac2d9dab29c1c9e7069f1d6f19fbbd115',1,'stdalign.h']]],
   ['alignof_18',['alignof',['../stdalign_8h.html#abb241e4f00c28465643e1010172aef04',1,'stdalign.h']]],

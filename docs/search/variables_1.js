@@ -6,7 +6,7 @@ var searchData=
   ['activate_3',['activate',['../unionvbus__payload__t.html#a6635ea888a53e20580fa772e6c4aa153',1,'vbus_payload_t']]],
   ['active_5freaders_4',['active_readers',['../structpthread__rwlock__t.html#a0f9b9e1f6af2da73f2a909103814ea3c',1,'pthread_rwlock_t']]],
   ['active_5fwriter_5',['active_writer',['../structpthread__rwlock__t.html#a290911bac11d36133634e52f9d2666fd',1,'pthread_rwlock_t']]],
-  ['addr_6',['addr',['../structlarge__seg.html#aaa681d5c790748892a94f9125f3d0335',1,'large_seg']]],
+  ['addr_6',['addr',['../structlarge__seg.html#aaa681d5c790748892a94f9125f3d0335',1,'large_seg::addr'],['../structlucifer__vm__bind.html#a319d0acf1877967e7d5a8a2666bb0fab',1,'lucifer_vm_bind::addr']]],
   ['attr_5fcount_7',['attr_count',['../structsmart__ata.html#add2ad18f79f2f777097e3f580c64164a',1,'smart_ata']]],
   ['attrs_8',['attrs',['../structsmart__ata.html#a0b5c5aa270acd92e6491d20aedb439cb',1,'smart_ata']]],
   ['available_5fspare_9',['available_spare',['../structsmart__nvme.html#aaa6691381633f8db518e47bf1b44fbcb',1,'smart_nvme']]],

@@ -14,5 +14,6 @@ var searchData=
   ['version_11',['version',['../structsmart__ata.html#a19859ef7c106c2dd5779538823bd862e',1,'smart_ata']]],
   ['version_5fmajor_12',['version_major',['../structlucifer__version.html#a1c82769d3225a4d9c1032809d018feca',1,'lucifer_version']]],
   ['version_5fminor_13',['version_minor',['../structlucifer__version.html#a953dcd013ad024e57b32789e2e840447',1,'lucifer_version']]],
-  ['version_5fpatchlevel_14',['version_patchlevel',['../structlucifer__version.html#a482840432f475f73b2f3816bc3c501d0',1,'lucifer_version']]]
+  ['version_5fpatchlevel_14',['version_patchlevel',['../structlucifer__version.html#a482840432f475f73b2f3816bc3c501d0',1,'lucifer_version']]],
+  ['vm_5fid_15',['vm_id',['../structlucifer__vm__create.html#a251c8f3532b617062dc1e305f2495588',1,'lucifer_vm_create::vm_id'],['../structlucifer__vm__destroy.html#a0cc21fd7c3598a9c88dda046f7c358ad',1,'lucifer_vm_destroy::vm_id'],['../structlucifer__vm__bind.html#a61545674b29e5decf3b48c7fc0c66311',1,'lucifer_vm_bind::vm_id'],['../structlucifer__exec.html#a93249fa31dd3395d089973ffcbcd20d6',1,'lucifer_exec::vm_id']]]
 ];
