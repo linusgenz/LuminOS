@@ -429,6 +429,72 @@ namespace gpu::intel::core {
         return vm_slots_[vm_id - 1];
     }
 
+    u32 IntelGpuDevice::gem_create(const lucifer_gem_create& args) {
+        for (usize i = 0; i < MAX_LUCIFER_GEM_OBJECTS; ++i) {
+            if (gem_slots_[i].size != 0 || gem_slots_[i].is_userptr) {
+                continue;
+            }
+
+            gem_slots_[i] = LucGemObject{
+                .size = args.size,
+                .placement = args.placement,
+                .flags = args.flags,
+                .cpu_caching = args.cpu_caching,
+                .is_userptr = false,
+                .userptr = 0,
+            };
+
+            return static_cast<u32>(i) + 1;
+        }
+
+        Log::log_dbc("intel-gpu: GEM_CREATE failed (no free GEM slots)");
+        return 0;
+    }
+
+    u32 IntelGpuDevice::gem_create_userptr(const lucifer_gem_userptr& args) {
+        for (usize i = 0; i < MAX_LUCIFER_GEM_OBJECTS; ++i) {
+            if (gem_slots_[i].size != 0 || gem_slots_[i].is_userptr) {
+                continue;
+            }
+
+            gem_slots_[i] = LucGemObject{
+                .size = args.size,
+                .placement = 0,
+                .flags = 0,
+                .cpu_caching = LUCIFER_GEM_CPU_CACHING_WB,
+                .is_userptr = true,
+                .userptr = args.ptr,
+            };
+
+            return static_cast<u32>(i) + 1;
+        }
+
+        Log::log_dbc("intel-gpu: GEM_USERPTR failed (no free GEM slots)");
+        return 0;
+    }
+
+    bool IntelGpuDevice::gem_close(const u32 handle) {
+        LucGemObject* obj = lookup_gem(handle);
+        if (!obj) {
+            return false;
+        }
+
+        *obj = LucGemObject{};
+        return true;
+    }
+
+    IntelGpuDevice::LucGemObject* IntelGpuDevice::lookup_gem(const u32 handle) {
+        if (handle == 0 || handle > MAX_LUCIFER_GEM_OBJECTS) {
+            return nullptr;
+        }
+
+        LucGemObject* obj = &gem_slots_[handle - 1];
+        if (obj->size == 0 && !obj->is_userptr) {
+            return nullptr; // slot empty
+        }
+        return obj;
+    }
+
 
     int IntelGpuDevice::ioctl(CharFile*, const u32 request, void* arg) {
         if (request == LUCIFER_IOCTL_VERSION) {
@@ -475,6 +541,45 @@ namespace gpu::intel::core {
             }
 
             return destroy_vm(destroy->vm_id) ? 0 : -1;
+        }
+
+        if (request == LUCIFER_IOCTL_GEM_CREATE) {
+            auto* create = static_cast<lucifer_gem_create*>(arg);
+            if (!create) {
+                return -1;
+            }
+
+            const u32 handle = gem_create(*create);
+            if (handle == 0) {
+                return -1;
+            }
+
+            create->handle = handle;
+            return 0;
+        }
+
+        if (request == LUCIFER_IOCTL_GEM_USERPTR) {
+            auto* userptr = static_cast<lucifer_gem_userptr*>(arg);
+            if (!userptr) {
+                return -1;
+            }
+
+            const u32 handle = gem_create_userptr(*userptr);
+            if (handle == 0) {
+                return -1;
+            }
+
+            userptr->handle = handle;
+            return 0;
+        }
+
+        if (request == LUCIFER_IOCTL_GEM_CLOSE) {
+            const auto* close = static_cast<lucifer_gem_close*>(arg);
+            if (!close) {
+                return -1;
+            }
+
+            return gem_close(close->handle) ? 0 : -1;
         }
 
         if (request != LUCIFER_IOCTL_QUERY) {

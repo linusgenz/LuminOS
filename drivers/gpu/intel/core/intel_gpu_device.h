@@ -33,6 +33,7 @@
 #include "vespera/devices/device_info.h"
 #include "vespera/devices/kernel_device.h"
 
+#include "uapi/vespera/dev/lucifer_drm.h"
 
 namespace pci {
     struct pci_device;
@@ -230,6 +231,30 @@ namespace gpu::intel::core {
         bool destroy_vm(u32 vm_id);
         [[nodiscard]] IntelPpgtt* lookup_vm(u32 vm_id) const;
 
+        bool vm_bind(const lucifer_vm_bind& args);
+
+        /// Minimal bring-up bookkeeping for one GEM object. Deliberately
+        /// thin for now — just enough for gem_create/gem_create_userptr/
+        /// gem_close to round-trip a handle. No backing allocation lives
+        /// here yet (no phys pages, no GGTT/PPGTT binding); that arrives
+        /// with VM_BIND. Mirrors the vm_slots_ handle scheme below rather
+        /// than introducing a second allocation strategy.
+        struct LucGemObject {
+            u64 size = 0;         ///< requested size in bytes (0 for userptr)
+            u32 placement = 0;    ///< memory region bitmask, from GEM_CREATE
+            u32 flags = 0;         ///< enum lucifer_gem_create_flags
+            u32 cpu_caching = 0;   ///< enum lucifer_gem_cpu_caching
+            bool is_userptr = false;
+            u64 userptr = 0;       ///< user VA, only valid when is_userptr
+        };
+
+        static constexpr usize MAX_LUCIFER_GEM_OBJECTS = 4096;
+        LucGemObject gem_slots_[MAX_LUCIFER_GEM_OBJECTS] = {};
+
+        [[nodiscard]] u32 gem_create(const lucifer_gem_create& args);
+        [[nodiscard]] u32 gem_create_userptr(const lucifer_gem_userptr& args);
+        bool gem_close(u32 handle);
+        [[nodiscard]] LucGemObject* lookup_gem(u32 handle);
 
         volatile INTEL_IGP_PCI_CONFIG* igp_cfg_;
         pci::pci_id pci_id_;
