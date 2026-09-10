@@ -521,3 +521,14 @@ int DevFs::poll(const VfsNode* node) {
 
     return POLLERR;
 }
+
+CharFile* DevFs::get_char_file(const VfsNode* node) {
+    if (!node || node->type != VfsNodeType::CharDevice) return nullptr;
+
+    auto* entry = static_cast<DevfsEntry*>(node->internal_data);
+    if (!entry || !entry->device || !entry->device->chardev) return nullptr;
+
+    SpinlockGuard guard(lock_);
+
+    return entry->cf;
+}
