@@ -35,6 +35,8 @@
 #include "vespera/devices/kernel_device.h"
 
 #include "uapi/vespera/dev/lucifer_drm.h"
+#include "uapi/vespera/dev/drm.h"
+#include <vespera/sync/wait_queue.h>
 
 namespace pci {
     struct pci_device;
@@ -42,6 +44,10 @@ namespace pci {
 
 namespace gpu::intel::bcs {
     class IntelBcs;
+}
+
+namespace gpu::intel::rcs {
+    class IntelRcs;
 }
 
 namespace gpu::intel::core {
@@ -146,6 +152,10 @@ namespace gpu::intel::core {
 
         void add_bcs(bcs::IntelBcs* engine) {
             bcs_ = engine;
+        }
+
+        void add_rcs(rcs::IntelRcs* engine) {
+            rcs_ = engine;
         }
 
         int open(CharFile** out_cf) override;
@@ -287,6 +297,82 @@ namespace gpu::intel::core {
         /// identified by vm_id.
         bool vm_bind(const struct lucifer_vm_bind& args);
 
+        /// Backs DRM_IOCTL_SYNCOBJ_WAIT (see syncobj_wait() below)
+        static constexpr usize LUCIFER_NUM_ENGINE_CLASSES = 2; // RENDER, COPY
+        WaitQueue engine_waiters_[LUCIFER_NUM_ENGINE_CLASSES];
+
+        [[nodiscard]] IntelEngine* engine_for_class(u32 engine_class) const;
+
+        void engine_signal_seqno(u32 engine_class);
+
+        /// Submits one batch to the given engine via
+        /// IntelEngine::dispatch_batch(). Returns the assigned seqno via
+        /// args.out_seqno, or false on failure (bad vm_id/engine/handle,
+        /// bad batch, or a bad entry in args.syncs).
+        ///
+        /// args.syncs points to an array of args.num_syncs
+        /// struct lucifer_sync entries (userspace pointer, mirrors how
+        /// DRM_IOCTL_SYNCOBJ_WAIT/RESET/SIGNAL already pass their handle
+        /// arrays below). Entries WITHOUT LUCIFER_SYNC_FLAG_SIGNAL are WAIT
+        /// entries: all of them are waited on (blocking, wait-all) before
+        /// the batch is dispatched. Entries WITH the flag set are SIGNAL
+        /// entries: once dispatch succeeds, each has this submission's
+        /// (engine, seqno) fence bound onto it, same as the old single
+        /// out_syncobj field used to.
+        ///
+        /// Every SIGNAL handle is validated (exists, currently fence-less)
+        /// *before* the batch is dispatched -- never submit and then fail
+        /// to attach a fence. WAIT handles just need to exist; being
+        /// currently fence-less is fine (an unsignaled wait handle blocks
+        /// until SIGNALed/timeout, matching normal DRM syncobj semantics).
+        [[nodiscard]] bool exec_submit(lucifer_exec& args);
+
+        /// One DRM syncobj slot. A syncobj is a handle to a fence, not a
+        /// fence itself
+        ///
+        /// Bring-up scope: binary only (signaled or not) -- no timeline
+        /// points, no fd import/export.
+        struct LucSyncObj {
+            bool in_use = false;      ///< handle is allocated
+            bool has_fence = false;   ///< a fence is currently bound (false right after CREATE, or after RESET)
+            bool pre_signaled = false; ///< set by DRM_SYNCOBJ_CREATE_SIGNALED when has_fence is also false
+            u32 engine = 0;            ///< enum lucifer_engine_class, valid iff has_fence
+            u64 target_seqno = 0;      ///< valid iff has_fence
+        };
+
+        static constexpr usize MAX_LUCIFER_SYNCOBJS = 4096;
+        LucSyncObj syncobj_slots_[MAX_LUCIFER_SYNCOBJS] = {};
+
+        [[nodiscard]] u32 syncobj_create(const struct drm_syncobj_create& args);
+        bool syncobj_destroy(u32 handle);
+
+        /// Binds this submission's (engine, seqno) fence onto an existing,
+        /// currently fence-less syncobj handle. Called by exec_submit() for
+        /// each SIGNAL entry in lucifer_exec::syncs, after dispatch. Fails
+        /// (returns false) if the handle doesn't exist or already holds a
+        /// live fence -- callers must RESET a reused handle first. By the
+        /// time exec_submit() calls this it has already been validated, so
+        /// in practice this can't fail from that call site.
+        [[nodiscard]] bool syncobj_bind_fence(u32 handle, u32 engine, u64 target_seqno);
+        bool syncobj_is_signaled_now(const LucSyncObj& obj, IntelEngine* engine);
+
+        /// Backs DRM_IOCTL_SYNCOBJ_WAIT.
+        [[nodiscard]] int syncobj_wait(const u32* handles, u32 count_handles, u32 flags,
+                                       i64 timeout_ns, u32* out_first_signaled);
+
+        /// Backs DRM_IOCTL_SYNCOBJ_RESET: clears the bound fence (if any)
+        /// on each of the given handles, leaving them allocated but
+        /// fence-less -- ready to be reused by a future exec_submit().
+        bool syncobj_reset(const u32* handles, u32 count_handles);
+
+        /// Backs DRM_IOCTL_SYNCOBJ_SIGNAL: force-signals each of the given
+        /// handles immediately, independent of any engine seqno. Bring-up
+        /// note: modeled as pre_signaled = true, has_fence = false, since
+        /// there's no real fence object to mark signaled here -- a
+        /// subsequent WAIT on the handle succeeds immediately, matching
+        /// observable DRM semantics even though the underlying
+        /// representation is simplified.
+        bool syncobj_signal(const u32* handles, u32 count_handles);
 
         volatile INTEL_IGP_PCI_CONFIG* igp_cfg_;
         pci::pci_id pci_id_;
@@ -301,6 +387,7 @@ namespace gpu::intel::core {
         void* de_pipe_a_handler_ctx_ = nullptr;
 
         bcs::IntelBcs* bcs_ = nullptr;
+        rcs::IntelRcs* rcs_ = nullptr;
 
         KernelDevice* kd_ = nullptr;
     };

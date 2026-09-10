@@ -23,7 +23,9 @@
 #include <klib/string.h>
 #include <vespera/log.h>
 #include <vespera/mm/memory.h>
+#include <vespera/scheduling.h>
 #include <vespera/time.h>
+#include "../kernel/units/unit.h"
 
 #include <gpu/intel/bcs/blt_commands.h>
 #include <gpu/intel/regs/gt_reset_regs.h>
@@ -244,6 +246,100 @@ namespace gpu::intel::core {
             }
             asm volatile("pause" ::: "memory");
         }
+    }
+
+    bool IntelEngine::seqno_wait_blocking(const u32 target_seqno, const i64 timeout_ns, WaitQueue& waiters) const {
+        const u32* seqno_ptr = seqno_ptr_for_read();
+        asm volatile("lfence" ::: "memory");
+        if (static_cast<i32>(*seqno_ptr - target_seqno) >= 0) return true;
+
+        // timeout_ns < 0 means wait forever -- still park on the WaitQueue
+        // rather than busy-polling, we just never race a deadline.
+        const bool infinite = timeout_ns < 0;
+        const u64 deadline_ns = infinite ? 0 : kernel::time::get_uptime_ns() + static_cast<u64>(timeout_ns);
+
+        Unit* cur = kernel::scheduling::get_current_unit();
+        if (!cur || cur->is_idle) {
+            // No unit context to block on (shouldn't happen from ioctl
+            // context, but stay safe) -- fall back to a bounded busy-check
+            // rather than parking a nonexistent/idle unit.
+            while (true) {
+                asm volatile("lfence" ::: "memory");
+                if (static_cast<i32>(*seqno_ptr - target_seqno) >= 0) return true;
+                if (!infinite && kernel::time::get_uptime_ns() >= deadline_ns) return false;
+                asm volatile("pause" ::: "memory");
+            }
+        }
+
+        const u8 cpu_id = cur->cpu_id;
+
+        while (true) {
+            // Re-check right before parking: a completion between the
+            // caller's last check and here must not be missed.
+            asm volatile("lfence" ::: "memory");
+            if (static_cast<i32>(*seqno_ptr - target_seqno) >= 0) return true;
+
+            waiters.add_wait(cur);
+
+            if (!infinite) {
+                // Must be set AFTER add_wait() (see wait_queue.h) so
+                // wake_all()/wake_one() correctly see wakeup_ns != 0 and
+                // clean up the scheduler's blocked_queue entry alongside
+                // the WaitQueue entry if a signal wins the race.
+                cur->sleep_context.wakeup_ns = deadline_ns;
+                kernel::scheduling::add_blocked_unit(cur, cpu_id);
+            }
+
+            kernel::scheduling::yield();
+
+            // Woken -- by engine_signal_seqno() (wake_all_irq()), by the
+            // scheduler's timeout sweep, or spuriously. Never trust the
+            // wake reason: always re-check the actual HWSP seqno.
+            asm volatile("lfence" ::: "memory");
+            if (static_cast<i32>(*seqno_ptr - target_seqno) >= 0) {
+                return true;
+            }
+
+            if (!infinite && kernel::time::get_uptime_ns() >= deadline_ns) {
+                // Timed out without reaching target_seqno. remove() handles
+                // the race against a concurrent wake_one()/wake_all() that
+                // fired between our seqno check above and here: whichever
+                // side removes the entry first "wins". If we lose the race
+                // (remove() returns false), a wakeup is already in flight
+                // for us, so loop back and re-check rather than returning
+                // -ETIME out from under it.
+                if (waiters.remove(cur)) {
+                    return false;
+                }
+            }
+
+            // Not yet signaled, not timed out (or lost the removal race) --
+            // loop back and park again.
+        }
+    }
+
+    bool IntelEngine::dispatch_batch(const gfx_addr_t batch_addr, const u64 batch_len, u32* out_seqno) {
+        (void)batch_len;
+
+        if (!out_seqno) {
+            return false;
+        }
+
+        const MI_BATCH_BUFFER_START start_cmd = MI_BATCH_BUFFER_START::create(gfx_raw(batch_addr));
+        ring_write_cmd(start_cmd);
+
+        const MI_BATCH_BUFFER_END end_cmd = MI_BATCH_BUFFER_END::create();
+        ring_write_cmd(end_cmd);
+
+        // Assign the seqno *before* submit_ring() makes the batch visible
+        // to hardware: once submitted, the engine may complete (and the IRQ
+        // may fire) before we return, so seqno_next() must already reflect
+        // the value this submission is waiting on.
+        *out_seqno = seqno_next();
+
+        submit_ring();
+
+        return true;
     }
 
     void IntelEngine::lrc_write_ring_field(usize dword_offset, u32 engine_relative_mmio_off, u32 value) const {

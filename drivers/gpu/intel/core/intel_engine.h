@@ -22,6 +22,7 @@
 
 #include <vespera/mm/addr.h>
 #include <vespera/sync/atomic.h>
+#include <vespera/sync/wait_queue.h>
 #include <vespera/types.h>
 
 #include "intel_engine_types.h"
@@ -94,6 +95,12 @@ namespace gpu::intel::core {
         [[nodiscard]] virtual u32 gt_debug_irq_bitmask() const {
             return 0;
         }
+
+        [[nodiscard]] bool dispatch_batch(gfx_addr_t batch_addr, u64 batch_len, u32* out_seqno);
+
+        [[nodiscard]] bool seqno_wait_blocking(u32 target_seqno, i64 timeout_ns, WaitQueue& waiters) const;
+
+        const u32* seqno_ptr_for_read() const;
 
     protected:
         EngineType type_;
@@ -197,7 +204,6 @@ namespace gpu::intel::core {
 
         void hwsp_alloc();
         u32 seqno_next();
-        const u32* seqno_ptr_for_read() const;
         bool seqno_wait(u32 target_seqno, u32 timeout_us, AtomicFlag& completion_flag);
 
         /// Allocates the LRC (Logical Ring Context) in GGTT.

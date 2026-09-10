@@ -26,15 +26,16 @@
 #include <vespera/log.h>
 #include <vespera/mm/memory.h>
 #include <vespera/time.h>
+#include <errno.h>
 
 #include <gpu/intel/regs/gt_interrupt_regs.h>
 #include <gpu/intel/regs/interrupt_regs.h>
 #include "intel_engine.h"
 #include "intel_ppgtt.h"
-#include "mocs_init.h"
 #include "drivers/mmio_post_write.h"
 #include "filesystem/devfs.h"
 #include "gpu/intel/rcs/intel_rcs.h"
+#include "gpu/intel/bcs/intel_bcs.h"
 #include "gpu/intel/regs/fuse_regs.h"
 #include "intel_gem_backing.h"
 #include "uapi/vespera/dev/lucifer_drm.h"
@@ -553,6 +554,262 @@ namespace gpu::intel::core {
         return vm->insert_range(make_gfx(args.addr), phys_start, args.range, caching, writable);
     }
 
+    IntelEngine* IntelGpuDevice::engine_for_class(const u32 engine_class) const {
+        switch (engine_class) {
+            case LUCIFER_ENGINE_CLASS_RENDER:
+                return rcs_;
+            case LUCIFER_ENGINE_CLASS_COPY:
+                return bcs_;
+            default:
+                return nullptr;
+        }
+    }
+
+    void IntelGpuDevice::engine_signal_seqno(const u32 engine_class) {
+        if (engine_class >= LUCIFER_NUM_ENGINE_CLASSES) {
+            return;
+        }
+
+        // The HWSP seqno itself already advanced (hardware wrote it before
+        // raising the completion interrupt) -- this call exists purely to
+        // wake whoever is parked in engine_waiters_[engine_class] so they
+        // re-check IntelEngine::seqno_ptr_for_read() themselves. Runs in
+        // IRQ context, hence wake_all_irq() rather than wake_all().
+        engine_waiters_[engine_class].wake_all_irq();
+    }
+
+    bool IntelGpuDevice::exec_submit(lucifer_exec& args) {
+        IntelPpgtt* vm = lookup_vm(args.vm_id);
+        if (!vm) {
+            Log::log_dbc("intel-gpu: EXEC failed (bad vm_id)");
+            return false;
+        }
+
+        IntelEngine* engine = engine_for_class(args.engine);
+        if (!engine) {
+            Log::log_dbc("intel-gpu: EXEC failed (bad or unregistered engine=%u)", args.engine);
+            return false;
+        }
+
+        if (args.num_syncs != 0 && args.syncs == 0) {
+            Log::log_dbc("intel-gpu: EXEC failed (num_syncs=%u but syncs=NULL)", args.num_syncs);
+            return false;
+        }
+
+        const auto* syncs = reinterpret_cast<const lucifer_sync*>(args.syncs);
+
+        // Validate every sync entry up front -- both WAIT and SIGNAL
+        // handles must exist, and SIGNAL handles must currently be
+        // fence-less, or we must fail without having submitted anything.
+        // Mirrors the old single out_syncobj check, just over an array.
+        for (u32 i = 0; i < args.num_syncs; ++i) {
+            const u32 handle = syncs[i].handle;
+
+            if (handle == 0 || handle > MAX_LUCIFER_SYNCOBJS || !syncobj_slots_[handle - 1].in_use) {
+                Log::log_dbc("intel-gpu: EXEC failed (bad sync handle=%u at index %u)", handle, i);
+                return false;
+            }
+
+            if ((syncs[i].flags & LUCIFER_SYNC_FLAG_SIGNAL) && syncobj_slots_[handle - 1].has_fence) {
+                Log::log_dbc("intel-gpu: EXEC failed (signal handle=%u already has a fence, reset it first)",
+                             handle);
+                return false;
+            }
+        }
+
+        // Wait entries block dispatch of this batch -- wait-all semantics,
+        // no timeout (submission-time ordering, not a userspace-visible
+        // wait with its own deadline). Matches how Mesa/iris only ever
+        // passes already-outstanding fences from prior submissions here.
+        for (u32 i = 0; i < args.num_syncs; ++i) {
+            if (syncs[i].flags & LUCIFER_SYNC_FLAG_SIGNAL) {
+                continue;
+            }
+
+            const u32 handle = syncs[i].handle;
+            if (syncobj_wait(&handle, 1, DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL, -1, nullptr) != 0) {
+                Log::log_dbc("intel-gpu: EXEC failed (wait on sync handle=%u)", handle);
+                return false;
+            }
+        }
+
+        u32 seqno = 0;
+        if (!engine->dispatch_batch(make_gfx(args.batch_addr), args.batch_len, &seqno)) {
+            Log::log_dbc("intel-gpu: EXEC failed (dispatch_batch)");
+            return false;
+        }
+
+        args.out_seqno = seqno;
+
+        // Can't fail from here on -- every SIGNAL handle was already
+        // validated above, and no one else can have touched them between
+        // the check and here (single-threaded ioctl dispatch).
+        for (u32 i = 0; i < args.num_syncs; ++i) {
+            if (syncs[i].flags & LUCIFER_SYNC_FLAG_SIGNAL) {
+                syncobj_bind_fence(syncs[i].handle, args.engine, seqno);
+            }
+        }
+
+        return true;
+    }
+
+    u32 IntelGpuDevice::syncobj_create(const drm_syncobj_create& args) {
+        for (usize i = 0; i < MAX_LUCIFER_SYNCOBJS; ++i) {
+            if (syncobj_slots_[i].in_use) {
+                continue;
+            }
+
+            syncobj_slots_[i] = LucSyncObj{
+                .in_use = true,
+                .has_fence = false,
+                .pre_signaled = (args.flags & DRM_SYNCOBJ_CREATE_SIGNALED) != 0,
+            };
+
+            return static_cast<u32>(i) + 1;
+        }
+
+        Log::log_dbc("intel-gpu: SYNCOBJ_CREATE failed (no free syncobj slots)");
+        return 0;
+    }
+
+    bool IntelGpuDevice::syncobj_destroy(const u32 handle) {
+        if (handle == 0 || handle > MAX_LUCIFER_SYNCOBJS) {
+            return false;
+        }
+
+        LucSyncObj* obj = &syncobj_slots_[handle - 1];
+        if (!obj->in_use) {
+            return false;
+        }
+
+        *obj = LucSyncObj{};
+        return true;
+    }
+
+    bool IntelGpuDevice::syncobj_bind_fence(const u32 handle, const u32 engine, const u64 target_seqno) {
+        if (handle == 0 || handle > MAX_LUCIFER_SYNCOBJS) {
+            return false;
+        }
+
+        LucSyncObj* obj = &syncobj_slots_[handle - 1];
+        if (!obj->in_use || obj->has_fence) {
+            return false;
+        }
+
+        obj->has_fence = true;
+        obj->pre_signaled = false;
+        obj->engine = engine;
+        obj->target_seqno = target_seqno;
+        return true;
+    }
+
+    /// True if `obj`'s current state is already signaled without needing to
+    /// touch hardware: either force-signaled (SYNCOBJ_SIGNAL / just-created
+    /// with DRM_SYNCOBJ_CREATE_SIGNALED), or its bound fence's seqno has
+    /// already retired on its engine.
+    bool IntelGpuDevice::syncobj_is_signaled_now(const IntelGpuDevice::LucSyncObj& obj,
+                                        IntelEngine* engine) {
+        if (!obj.has_fence) {
+            return obj.pre_signaled;
+        }
+        return engine && *engine->seqno_ptr_for_read() >= static_cast<u32>(obj.target_seqno);
+    }
+
+    int IntelGpuDevice::syncobj_wait(const u32* handles, const u32 count_handles, const u32 flags,
+                                     const i64 timeout_ns, u32* out_first_signaled) {
+        if (!handles || count_handles == 0) {
+            return -1;
+        }
+
+        for (u32 i = 0; i < count_handles; ++i) {
+            if (handles[i] == 0 || handles[i] > MAX_LUCIFER_SYNCOBJS || !syncobj_slots_[handles[i] - 1].in_use) {
+                Log::log_dbc("intel-gpu: SYNCOBJ_WAIT failed (bad handle=%u)", handles[i]);
+                return -1;
+            }
+        }
+
+        const bool wait_all = (flags & DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL) != 0;
+
+        // Bring-up note: no interrupt-driven multi-wait queue across
+        // engines yet, so this polls at a fixed interval instead of
+        // parking on engine_waiters_ the way single-handle
+        // seqno_wait_blocking() does. Fine for bring-up; TODO(lucifer):
+        // fold this into IntelEngine::seqno_wait_blocking()-style blocking
+        // waits once cross-engine wait infra exists.
+        const i64 poll_interval_us = 500;
+        i64 waited_ns = 0;
+
+        while (true) {
+            u32 signaled_count = 0;
+
+            for (u32 i = 0; i < count_handles; ++i) {
+                const LucSyncObj& obj = syncobj_slots_[handles[i] - 1];
+                IntelEngine* engine = obj.has_fence ? engine_for_class(obj.engine) : nullptr;
+
+                if (syncobj_is_signaled_now(obj, engine)) {
+                    signaled_count++;
+                    if (!wait_all && out_first_signaled) {
+                        *out_first_signaled = i;
+                    }
+                    if (!wait_all) {
+                        return 0;
+                    }
+                }
+            }
+
+            if (wait_all && signaled_count == count_handles) {
+                return 0;
+            }
+
+            if (timeout_ns >= 0 && waited_ns >= timeout_ns) {
+                return -ETIME;
+            }
+
+            kernel::time::sleep_us(poll_interval_us);
+            waited_ns += poll_interval_us * 1000;
+        }
+    }
+
+    bool IntelGpuDevice::syncobj_reset(const u32* handles, const u32 count_handles) {
+        if (!handles) {
+            return false;
+        }
+
+        for (u32 i = 0; i < count_handles; ++i) {
+            if (handles[i] == 0 || handles[i] > MAX_LUCIFER_SYNCOBJS || !syncobj_slots_[handles[i] - 1].in_use) {
+                return false;
+            }
+        }
+
+        for (u32 i = 0; i < count_handles; ++i) {
+            LucSyncObj& obj = syncobj_slots_[handles[i] - 1];
+            obj.has_fence = false;
+            obj.pre_signaled = false;
+            obj.engine = 0;
+            obj.target_seqno = 0;
+        }
+        return true;
+    }
+
+    bool IntelGpuDevice::syncobj_signal(const u32* handles, const u32 count_handles) {
+        if (!handles) {
+            return false;
+        }
+
+        for (u32 i = 0; i < count_handles; ++i) {
+            if (handles[i] == 0 || handles[i] > MAX_LUCIFER_SYNCOBJS || !syncobj_slots_[handles[i] - 1].in_use) {
+                return false;
+            }
+        }
+
+        for (u32 i = 0; i < count_handles; ++i) {
+            LucSyncObj& obj = syncobj_slots_[handles[i] - 1];
+            obj.has_fence = false;
+            obj.pre_signaled = true;
+        }
+        return true;
+    }
+
     bool IntelGpuDevice::query_gem_object(const u32 handle, GemObjectInfo* out) {
         if (!out) {
             return false;
@@ -740,6 +997,79 @@ namespace gpu::intel::core {
 
             return gem_mmap_offset(*mmap_offset, &mmap_offset->offset) ? 0 : -1;
         }
+
+        if (request == LUCIFER_IOCTL_EXEC) {
+            auto* exec = static_cast<lucifer_exec*>(arg);
+            if (!exec) {
+                return -1;
+            }
+
+            return exec_submit(*exec) ? 0 : -1;
+        }
+
+        if (request == DRM_IOCTL_SYNCOBJ_CREATE) {
+            auto* create = static_cast<drm_syncobj_create*>(arg);
+            if (!create) {
+                return -1;
+            }
+
+            const u32 handle = syncobj_create(*create);
+            if (handle == 0) {
+                return -1;
+            }
+
+            create->handle = handle;
+            return 0;
+        }
+
+        if (request == DRM_IOCTL_SYNCOBJ_DESTROY) {
+            const auto* destroy = static_cast<drm_syncobj_destroy*>(arg);
+            if (!destroy) {
+                return -1;
+            }
+
+            return syncobj_destroy(destroy->handle) ? 0 : -1;
+        }
+
+        if (request == DRM_IOCTL_SYNCOBJ_WAIT) {
+            auto* wait = static_cast<drm_syncobj_wait*>(arg);
+            if (!wait) {
+                return -1;
+            }
+
+            // wait->handles is a userspace u64 holding a pointer to a
+            // u32[count_handles] array, per generic DRM syncobj ABI --
+            // mirrors how gem_syncobj_create()-style callers in Mesa build
+            // this struct today.
+            const auto* handles = reinterpret_cast<const u32*>(wait->handles);
+
+            return syncobj_wait(handles, wait->count_handles, wait->flags,
+                                wait->timeout_nsec, &wait->first_signaled);
+        }
+
+        if (request == DRM_IOCTL_SYNCOBJ_RESET) {
+            const auto* reset = static_cast<drm_syncobj_array*>(arg);
+            if (!reset) {
+                return -1;
+            }
+
+            const auto* handles = reinterpret_cast<const u32*>(reset->handles);
+            return syncobj_reset(handles, reset->count_handles) ? 0 : -1;
+        }
+
+        if (request == DRM_IOCTL_SYNCOBJ_SIGNAL) {
+            const auto* signal = static_cast<drm_syncobj_array*>(arg);
+            if (!signal) {
+                return -1;
+            }
+
+            const auto* handles = reinterpret_cast<const u32*>(signal->handles);
+            return syncobj_signal(handles, signal->count_handles) ? 0 : -1;
+        }
+
+        /* TODO(lucifer): DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD/FD_TO_HANDLE and
+         * timeline-point variants (drm_syncobj_timeline_wait, TRANSFER,
+         * eventfd) are declared in drm.h but not dispatched here yet */
 
         if (request != LUCIFER_IOCTL_QUERY) {
             Log::debug("unknown DRM lucifer ioctl. request=%x", request);
