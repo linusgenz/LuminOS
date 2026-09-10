@@ -45,7 +45,11 @@ extern "C" {
 
 #define LUCIFER_IOCTL_VM_BIND          IOW ('L', 0x0B, struct lucifer_vm_bind)
 
-#define LUCIFER_IOCTL_EXEC             IOW ('L', 0x0C, struct lucifer_exec)
+#define LUCIFER_IOCTL_EXEC             IOWR('L', 0x0C, struct lucifer_exec)
+
+#define LUCIFER_IOCTL_SYNCOBJ_CREATE   IOWR('L', 0x0D, struct lucifer_syncobj_create)
+#define LUCIFER_IOCTL_SYNCOBJ_DESTROY  IOW ('L', 0x0E, struct lucifer_syncobj_destroy)
+#define LUCIFER_IOCTL_SYNCOBJ_WAIT     IOWR('L', 0x0F, struct lucifer_syncobj_wait)
 
 struct lucifer_version {
     int32_t version_major;
@@ -289,14 +293,28 @@ struct lucifer_vm_bind {
     uint32_t pad0;
 };
 
-/** Minimal batch submission: one batch buffer's GPU address against a
- *  given vm_id / engine. */
+/**
+ * Minimal batch submission: one batch buffer's GPU address against a
+ * given vm_id / engine.
+ *
+ * Every EXEC is assigned a monotonically increasing per-engine sequence
+ * number (out_seqno) at submission time, before the batch is handed to the
+ * hardware. This seqno is the fence value for this submission: it becomes
+ * signaled once the engine's completed-seqno counter reaches or passes it
+ * (see LUCIFER_IOCTL_SYNCOBJ_WAIT). Userspace normally wraps out_seqno in a
+ * syncobj via LUCIFER_IOCTL_SYNCOBJ_CREATE rather than tracking raw seqnos
+ * itself, mirroring how iris/Mesa expects an opaque handle to wait on.
+ */
 struct lucifer_exec {
     uint32_t vm_id;  /**< in */
     uint32_t engine;  /**< in, enum lucifer_engine_class */
 
     uint64_t batch_addr; /**< in, GPU virtual address of the batch to run */
     uint64_t batch_len;   /**< in, length in bytes */
+
+    uint64_t out_seqno; /**< out, fence value for this submission */
+
+    uint32_t out_syncobj; /**< in, optional DRM syncobj handle to bind to this submission's completion (0 = none) */
 };
 
 #ifdef __cplusplus
