@@ -26,15 +26,24 @@
 
 #include <tty/tty_device.h>
 #include "../handle_resolution.h"
+#include "filesystem/vfs_handle.h"
 
 namespace syscalls::internal {
     i64 sys_tcgetpgrp(u64 arg0, u64, u64, u64, u64, u64) {
         const auto rh = SYSCALL_TRY(resolve_handle(arg0, HANDLE_TYPE_DEVICE));
 
-        auto* dev = rh.resource_as<CharDevice>();
-        if (!dev || !dev->is_tty()) return -ENOTTY;
+        auto* vfs_handle = rh.resource_as<VfsHandle>();
+        if (!vfs_handle || !vfs_handle->node) return -EBADH;
+
+        const auto* entry = static_cast<DevfsEntry*>(vfs_handle->node->internal_data);
+        if (!entry || !entry->device || !entry->device->chardev) return -EBADH;
+
+        CharDevice* dev = entry->device->chardev;
+
+        if (!dev->is_tty()) return -ENOTTY;
+
         const TtyDevice* tty_dev = dev->as_tty();
-        if (!tty_dev->tty) return -ENOTTY;
+        if (!tty_dev || !tty_dev->tty) return -ENOTTY;
 
         return static_cast<i64>(tty_dev->tty->fg_pgid);
     }
